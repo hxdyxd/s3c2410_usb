@@ -45,9 +45,9 @@
 #include "app_debug.h"
 
 
-#define OHCI_USE_NPS		/* force NoPowerSwitching mode */
+#define OHCI_USE_NPS        /* force NoPowerSwitching mode */
 /* For initializing controller (mask in an HCFS mode too) */
-#define	OHCI_CONTROL_INIT \
+#define OHCI_CONTROL_INIT \
 (OHCI_CTRL_CBSR & 0x3) | OHCI_CTRL_IE | OHCI_CTRL_PLE
 #define readl(a) (*((vu_long *)(a)))
 #define writel(a, b) (*((vu_long *)(b)) = ((vu_long)a))
@@ -60,14 +60,14 @@
 */
 unsigned int min_t(unsigned int x,unsigned int y)
 {
-	return x<y?x:y;
+    return x<y?x:y;
 }
 int min_t_int(int x,int y)
 {
-	return x<y?x:y;
+    return x<y?x:y;
 }
 
-#define mdelay(n)	{unsigned long msec=(n); while (msec--) udelay(1000);}
+#define mdelay(n)   {unsigned long msec=(n); while (msec--) udelay(1000);}
 #define du_debug
 //#undef DEBUG
 #define DEBUG
@@ -80,7 +80,7 @@ void dbg(char *fmt,...){}
 #endif /* DEBUG */
 //#define err(format, arg...) s_UartPrint("ERROR: " format "\r\n", ## arg)
 void err(char *fmt,...){}
-//#define	err	s_UartPrint
+//#define   err s_UartPrint
 //#undef SHOW_INFO
 #define SHOW_INFO
 #ifdef SHOW_INFO
@@ -122,23 +122,23 @@ int hc_stat=0xff;
     if (hc->flags & OHCI_QUIRK_AMD756) \
     while (temp & mask) \
     temp = readl (&hc->regs->roothub.register); \
-    return	temp; \
+    return  temp; \
 }\
 )
 */
 static U32 roothub_a (struct ohci *hc)
 {
-    //return	read_roothub (hc, a, 0xfc0fe000);
-	U32 temp = readl (&hc->regs->roothub.a);
-	U32 mask=0xfc0fe000;
+    //return    read_roothub (hc, a, 0xfc0fe000);
+    U32 temp = readl (&hc->regs->roothub.a);
+    U32 mask=0xfc0fe000;
     if (hc->flags & OHCI_QUIRK_AMD756)
     {
-		while (temp & mask)
-		{ 	
-			temp = readl (&hc->regs->roothub.a);
-		}
-	} 
-    return	temp;
+        while (temp & mask)
+        {   
+            temp = readl (&hc->regs->roothub.a);
+        }
+    } 
+    return  temp;
 }
 
 
@@ -157,12 +157,12 @@ static __inline U32 roothub_status (struct ohci *hc)
 static U32 roothub_portstatus (struct ohci *hc, int i)
 {
     //return read_roothub (hc, portstatus [i], 0xffe0fce0);
-	U32 temp = readl (&hc->regs->roothub.portstatus[i]);
-	U32 mask=0xffe0fce0;
-	if (hc->flags & OHCI_QUIRK_AMD756)
-		while (temp & mask) 
-			temp = readl (&hc->regs->roothub.portstatus[i]); 
-    return	temp;
+    U32 temp = readl (&hc->regs->roothub.portstatus[i]);
+    U32 mask=0xffe0fce0;
+    if (hc->flags & OHCI_QUIRK_AMD756)
+        while (temp & mask) 
+            temp = readl (&hc->regs->roothub.portstatus[i]); 
+    return  temp;
 }
 
 
@@ -177,9 +177,9 @@ int transfer_len, struct devrequest * setup, urb_priv_t * urb, int interval);
 /* free HCD-private data associated with this URB */
 static void urb_free_priv (urb_priv_t * urb)
 {
-    int		i;
-    int		last;
-    struct td	* td;
+    int     i;
+    int     last;
+    struct td   * td;
     last = urb->length - 1;
     if (last >= 0) 
     {
@@ -276,10 +276,10 @@ static char * hcfs2string (int state)
 {
     switch (state) 
     {
-        case OHCI_USB_RESET:	return "reset";
-        case OHCI_USB_RESUME:	return "resume";
-        case OHCI_USB_OPER:	return "operational";
-        case OHCI_USB_SUSPEND:	return "suspend";
+        case OHCI_USB_RESET:    return "reset";
+        case OHCI_USB_RESUME:   return "resume";
+        case OHCI_USB_OPER: return "operational";
+        case OHCI_USB_SUSPEND:  return "suspend";
     }
     return "?";
 }
@@ -288,8 +288,8 @@ static char * hcfs2string (int state)
 /* dump control and status registers */
 static void ohci_dump_status (ohci_t *controller)
 {
-    struct ohci_regs	*regs = controller->regs;
-    U32			temp;
+    struct ohci_regs    *regs = controller->regs;
+    U32         temp;
     temp = readl (&regs->revision) & 0xff;
     if (temp != 0x10)
     dbg ("spec %d.%d", (temp >> 4), (temp & 0x0f));
@@ -326,7 +326,7 @@ static void ohci_dump_status (ohci_t *controller)
 
 static void ohci_dump_roothub (ohci_t *controller, int verbose)
 {
-    U32			temp, ndp, i;
+    U32         temp, ndp, i;
     temp = roothub_a (controller);
     ndp = (temp & RH_A_NDP);
     if (verbose) 
@@ -406,15 +406,15 @@ int transfer_len, struct devrequest *setup, int interval)
     int i, size = 0;
     ohci = &gohci;
     /* when controller's hung, permit only roothub cleanup attempts
-    	 * such as powering down ports */
+         * such as powering down ports */
     if (ohci->disabled) 
     {
         err("sohci_submit_job: EPIPE");
         return -1;
     }
     /* if we have an unfinished URB from previous transaction let's
-    	 * fail and scream as quickly as possible so as not to corrupt
-    	 * further communication */
+         * fail and scream as quickly as possible so as not to corrupt
+         * further communication */
     if (!urb_finished) 
     {
         err("sohci_submit_job: URB NOT FINISHED");
@@ -431,7 +431,7 @@ int transfer_len, struct devrequest *setup, int interval)
     /* for the private part of the URB we need the number of TDs (size) */
     switch (usb_pipetype (pipe)) 
     {
-    case PIPE_BULK:	
+    case PIPE_BULK: 
         /* one TD for every 4096 Byte */
         size = (transfer_len - 1) / 4096 + 1;
         break;
@@ -677,14 +677,14 @@ struct usb_device *dev, int index, urb_priv_t *urb_priv)
     td->data = (U32)data;
     #ifdef OHCI_FILL_TRACE
     //if ((usb_pipetype(urb_priv->pipe) == PIPE_BULK) && usb_pipeout(urb_priv->pipe)) {
-    //	for (i = 0; i < len; i++)
-    //	s_UartPrint("td->data[%d] %#2x ",i, ((unsigned char *)td->data)[i]);
-    //	s_UartPrint("\r\n");
+    //  for (i = 0; i < len; i++)
+    //  s_UartPrint("td->data[%d] %#2x ",i, ((unsigned char *)td->data)[i]);
+    //  s_UartPrint("\r\n");
     //}
     //if ((usb_pipetype(urb_priv->pipe) == PIPE_CONTROL) && usb_pipeout(urb_priv->pipe)) {
-    //	for (i = 0; i < len; i++)
-    //	s_UartPrint("td->data[%d] %#2x ",i, ((unsigned char *)td->data)[i]);
-    //	s_UartPrint("\r\n");
+    //  for (i = 0; i < len; i++)
+    //  s_UartPrint("td->data[%d] %#2x ",i, ((unsigned char *)td->data)[i]);
+    //  s_UartPrint("\r\n");
     //}
     #endif
     if (!len)
@@ -867,7 +867,7 @@ static int dl_done_list (ohci_t *ohci, td_t *td_list)
             stat = cc_to_error[cc];
         }
         /* see if this done list makes for all TD's of current URB,
-        		 * and mark the URB finished if so */
+                 * and mark the URB finished if so */
         if (++(lurb_priv->td_cnt) == lurb_priv->length) 
         {
             if ((ed->state & (ED_OPER | ED_UNLINK)))
@@ -900,10 +900,10 @@ static U8 root_hub_dev_des[] =
 {
     0x12,       /*  __u8  bLength; */
     0x01,       /*  __u8  bDescriptorType; Device */
-    0x10,	 /*  __u16 bcdUSB; v1.1 */
+    0x10,    /*  __u16 bcdUSB; v1.1 */
     0x01,
-    0x09,	 /*  __u8  bDeviceClass; HUB_CLASSCODE */
-    0x00,	 /*  __u8  bDeviceSubClass; */
+    0x09,    /*  __u8  bDeviceClass; HUB_CLASSCODE */
+    0x00,    /*  __u8  bDeviceSubClass; */
     0x00,       /*  __u8  bDeviceProtocol; */
     0x08,       /*  __u8  bMaxPacketSize0; 8 Bytes */
     0x00,       /*  __u16 idVendor; */
@@ -929,7 +929,7 @@ static U8 root_hub_config_des[] =
     0x01,       /*  __u8  bNumInterfaces; */
     0x01,       /*  __u8  bConfigurationValue; */
     0x00,       /*  __u8  iConfiguration; */
-    0x40,       /*  __u8  bmAttributes;	 Bit 7: Bus-powered, 6: Self-powered, 5 Remote-wakwup, 4..0: resvd */
+    0x40,       /*  __u8  bmAttributes;  Bit 7: Bus-powered, 6: Self-powered, 5 Remote-wakwup, 4..0: resvd */
     0x00,       /*  __u8  MaxPower; */
     /* interface */
     0x09,       /*  __u8  if_bLength; */
@@ -954,68 +954,68 @@ static U8 root_hub_config_des[] =
 
 static unsigned char root_hub_str_index0[] =
 {
-    0x04,	/*  __u8  bLength; */
-    0x03,	/*  __u8  bDescriptorType; String-descriptor */
-    0x09,	/*  __u8  lang ID */
-    0x04,	/*  __u8  lang ID */
+    0x04,   /*  __u8  bLength; */
+    0x03,   /*  __u8  bDescriptorType; String-descriptor */
+    0x09,   /*  __u8  lang ID */
+    0x04,   /*  __u8  lang ID */
 };
 
 
 static unsigned char root_hub_str_index1[] =
 {
-    28,			/*  __u8  bLength; */
-    0x03,		/*  __u8  bDescriptorType; String-descriptor */
-    'O',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    'H',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    'C',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    'I',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    ' ',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    'R',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    'o',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    'o',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    't',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    ' ',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    'H',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    'u',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
-    'b',			/*  __u8  Unicode */
-    0,			/*  __u8  Unicode */
+    28,         /*  __u8  bLength; */
+    0x03,       /*  __u8  bDescriptorType; String-descriptor */
+    'O',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    'H',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    'C',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    'I',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    ' ',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    'R',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    'o',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    'o',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    't',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    ' ',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    'H',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    'u',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
+    'b',            /*  __u8  Unicode */
+    0,          /*  __u8  Unicode */
 };
 
 
 /* Hub class-specific descriptor is constructed dynamically */
 /*-------------------------------------------------------------------------*/
-#define OK(x) 			len = (x); break
+#define OK(x)           len = (x); break
 #ifdef DEBUG
-#define WR_RH_STAT(x) 		\
+#define WR_RH_STAT(x)       \
 {\
     info("WR:status %#8x", (x));writel((x), &gohci.regs->roothub.status);\
 }
 
 
-#define WR_RH_PORTSTAT(x) 	\
+#define WR_RH_PORTSTAT(x)   \
 {\
     info("WR:portstatus[%d] %#8x", wIndex-1, (x));writel((x), &gohci.regs->roothub.portstatus[wIndex-1]);\
 }
 
 
 #else
-#define WR_RH_STAT(x) 		writel((x), &gohci.regs->roothub.status)
-#define WR_RH_PORTSTAT(x) 	writel((x), &gohci.regs->roothub.portstatus[wIndex-1])
+#define WR_RH_STAT(x)       writel((x), &gohci.regs->roothub.status)
+#define WR_RH_PORTSTAT(x)   writel((x), &gohci.regs->roothub.portstatus[wIndex-1])
 #endif
-#define RD_RH_STAT		roothub_status(&gohci)
-#define RD_RH_PORTSTAT		roothub_portstatus(&gohci,wIndex-1)
+#define RD_RH_STAT      roothub_status(&gohci)
+#define RD_RH_PORTSTAT      roothub_portstatus(&gohci,wIndex-1)
 /* request to virtual root hub */
 int rh_check_port_status(ohci_t *controller)
 {
@@ -1073,12 +1073,12 @@ void *buffer, int transfer_len, struct devrequest *cmd)
     switch (bmRType_bReq) 
     {
         /* Request Destination:
-        	   without flags: Device,
-        	   RH_INTERFACE: interface,
-        	   RH_ENDPOINT: endpoint,
-        	   RH_CLASS means HUB here,
-        	   RH_OTHER | RH_CLASS  almost ever means HUB_PORT here
-        	*/
+               without flags: Device,
+               RH_INTERFACE: interface,
+               RH_ENDPOINT: endpoint,
+               RH_CLASS means HUB here,
+               RH_OTHER | RH_CLASS  almost ever means HUB_PORT here
+            */
     case RH_GET_STATUS:
         *(U16 *) data_buf = m16_swap (1); OK (2);
     case RH_GET_STATUS | RH_INTERFACE:
@@ -1153,12 +1153,12 @@ void *buffer, int transfer_len, struct devrequest *cmd)
         case (0x01): 
             /* device descriptor */
             /*
-			len = min_t(unsigned int,
+            len = min_t(unsigned int,
             leni,
             min_t(unsigned int,
             sizeof (root_hub_dev_des),
             wLength));*/
-			len=min_t((unsigned int)leni,min_t(sizeof(root_hub_dev_des),(unsigned int)wLength));
+            len=min_t((unsigned int)leni,min_t(sizeof(root_hub_dev_des),(unsigned int)wLength));
             data_buf = root_hub_dev_des; OK(len);
         case (0x02): 
             /* configuration descriptor */
@@ -1167,18 +1167,18 @@ void *buffer, int transfer_len, struct devrequest *cmd)
             min_t(unsigned int,
             sizeof (root_hub_config_des),
             wLength));*/
-			len=min_t((unsigned int)leni,min_t(sizeof(root_hub_config_des),(unsigned int)wLength));
+            len=min_t((unsigned int)leni,min_t(sizeof(root_hub_config_des),(unsigned int)wLength));
             data_buf = root_hub_config_des; OK(len);
         case (0x03): 
             /* string descriptors */
             if(wValue==0x0300) 
             {                
-				/*len = min_t(unsigned int,
+                /*len = min_t(unsigned int,
                 leni,
                 min_t(unsigned int,
                 sizeof (root_hub_str_index0),
                 wLength));*/
-				len=min_t((unsigned int)leni,min_t(sizeof(root_hub_str_index0),(unsigned int)wLength));
+                len=min_t((unsigned int)leni,min_t(sizeof(root_hub_str_index0),(unsigned int)wLength));
                 data_buf = root_hub_str_index0;
                 OK(len);
             }
@@ -1189,7 +1189,7 @@ void *buffer, int transfer_len, struct devrequest *cmd)
                 min_t(unsigned int,
                 sizeof (root_hub_str_index1),
                 wLength));*/
-				len=min_t((unsigned int)leni,min_t(sizeof(root_hub_str_index1),(unsigned int)wLength));
+                len=min_t((unsigned int)leni,min_t(sizeof(root_hub_str_index1),(unsigned int)wLength));
                 data_buf = root_hub_str_index1;
                 OK(len);
             }
@@ -1200,15 +1200,15 @@ void *buffer, int transfer_len, struct devrequest *cmd)
     case RH_GET_DESCRIPTOR | RH_CLASS:
         {
             U32 temp = roothub_a (&gohci);
-            data_buf [0] = 9;		/* min length; */
+            data_buf [0] = 9;       /* min length; */
             data_buf [1] = 0x29;
             data_buf [2] = temp & RH_A_NDP;
             data_buf [3] = 0;
-            if (temp & RH_A_PSM) 	/* per-port power switching? */
+            if (temp & RH_A_PSM)    /* per-port power switching? */
             data_buf [3] |= 0x1;
-            if (temp & RH_A_NOCP)	/* no overcurrent reporting? */
+            if (temp & RH_A_NOCP)   /* no overcurrent reporting? */
             data_buf [3] |= 0x10;
-            else if (temp & RH_A_OCPM)	/* per-port overcurrent reporting? */
+            else if (temp & RH_A_OCPM)  /* per-port overcurrent reporting? */
             data_buf [3] |= 0x8;
             /* corresponds to data_buf[4-7] */
             datab [1] = 0;
@@ -1227,23 +1227,23 @@ void *buffer, int transfer_len, struct devrequest *cmd)
             }
             /*len = min_t(unsigned int, leni,
             min_t(unsigned int, data_buf [0], wLength));*/
-			len=min_t((unsigned int)leni,min_t((unsigned int)data_buf[0],(unsigned int)wLength));
+            len=min_t((unsigned int)leni,min_t((unsigned int)data_buf[0],(unsigned int)wLength));
             OK (len);
         }
-        case RH_GET_CONFIGURATION: 	*(U8 *) data_buf = 0x01; OK (1);
-        case RH_SET_CONFIGURATION: 	WR_RH_STAT (0x10000); OK (0);
+        case RH_GET_CONFIGURATION:  *(U8 *) data_buf = 0x01; OK (1);
+        case RH_SET_CONFIGURATION:  WR_RH_STAT (0x10000); OK (0);
     default:
         s_UartPrint("unsupported root hub command\r\n");
         stat = USB_ST_STALLED;
     }
-    #ifdef	DEBUG
+    #ifdef  DEBUG
     ohci_dump_roothub (&gohci, 1);
     #else
     wait_ms(1);
     #endif
     //len = min_t(int, len, leni);
     len=min_t_int(len,leni);
-	if (data != data_buf)
+    if (data != data_buf)
     memcpy (data, data_buf, len);
     dev->act_len = len;
     dev->status = stat;
@@ -1296,7 +1296,7 @@ int transfer_len, struct devrequest *setup, int interval)
     wait_ms(10);
     /* ohci_dump_status(&gohci); */
     /* allow more time for a BULK device to react - some are slow */
-    #define BULK_TO	 5000	/* timeout in milliseconds */
+    #define BULK_TO  5000   /* timeout in milliseconds */
     if (usb_pipetype (pipe) == PIPE_BULK)
     timeout = BULK_TO;
     else
@@ -1306,27 +1306,27 @@ int transfer_len, struct devrequest *setup, int interval)
     for (;;) 
     {
         /* check whether the controller is done */
-        stat = hc_interrupt();		
+        stat = hc_interrupt();      
         //stat=hc_stat;
         if (stat < 0) 
         {
             stat = USB_ST_CRC_ERR;
-			//=============du add 070302
-			#ifdef du_debug
-			s_UartPrint("[%d] submit_common_msg @@@@@@@@@@@@@@@@@@@@\r\n", __LINE__);
-			#endif
-			//==========================
+            //=============du add 070302
+            #ifdef du_debug
+            s_UartPrint("[%d] submit_common_msg @@@@@@@@@@@@@@@@@@@@\r\n", __LINE__);
+            #endif
+            //==========================
             break;
         }
         /* NOTE: since we are not interrupt driven in U-Boot and always
-        		 * handle only one URB at a time, we cannot assume the
-        		 * transaction finished on the first successful return from
-        		 * hc_interrupt().. unless the flag for current URB is set,
-        		 * meaning that all TD's to/from device got actually
-        		 * transferred and processed. If the current URB is not
-        		 * finished we need to re-iterate this loop so as
-        		 * hc_interrupt() gets called again as there needs to be some
-        		 * more TD's to process still */
+                 * handle only one URB at a time, we cannot assume the
+                 * transaction finished on the first successful return from
+                 * hc_interrupt().. unless the flag for current URB is set,
+                 * meaning that all TD's to/from device got actually
+                 * transferred and processed. If the current URB is not
+                 * finished we need to re-iterate this loop so as
+                 * hc_interrupt() gets called again as there needs to be some
+                 * more TD's to process still */
         if ((stat >= 0) && (stat != 0xff) && (urb_finished)) 
         {
             /* 0xff is returned for an SF-interrupt */
@@ -1335,7 +1335,7 @@ int transfer_len, struct devrequest *setup, int interval)
         if (--timeout) 
         {
             wait_ms(1);
-            if (!urb_finished); 	dbg("/%");
+            if (!urb_finished);     dbg("/%");
         } 
         else 
         {
@@ -1417,39 +1417,46 @@ static int hc_reset (ohci_t *ohci)
 {
     int timeout = 30;
     int smm_timeout = 50; /* 0,5 sec */
+    APP_WARN("OHCI_CTRL_IR\r\n");
     if (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
     {
         /* SMM owns the HC */
+        APP_WARN("OHCI_OCR\r\n");
         writel (OHCI_OCR, &ohci->regs->cmdstatus); /* request ownership */
-        info("USB HC TakeOver from SMM");
+        APP_WARN("USB HC TakeOver from SMM\r\n");
         while (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
         {
             wait_ms (10);
             if (--smm_timeout == 0) 
             {
-                err("USB HC TakeOver failed!");
+                APP_ERROR("USB HC TakeOver failed!\r\n");
                 return -1;
             }
         }
     }
+    APP_WARN("OHCI_INTR_MIE\r\n");
     /* Disable HC interrupts */
     writel (OHCI_INTR_MIE, &ohci->regs->intrdisable);
-    dbg("USB HC reset_hc usb-%s: ctrl = 0x%X ;",
-    ohci->slot_name,
-    readl (&ohci->regs->control));
+    APP_WARN("USB HC reset_hc usb-%s: ctrl = 0x%X ;\r\n",
+        ohci->slot_name,
+        readl (&ohci->regs->control));
     /* Reset USB (needed by some controllers) */
+    APP_WARN("writel 1443\r\n");
     writel (0, &ohci->regs->control);
     /* HC Reset requires max 10 us delay */
+    APP_WARN("writel 1446\r\n");
     writel (OHCI_HCR,  &ohci->regs->cmdstatus);
+    APP_WARN("readl OHCI_HCR\r\n");
     while ((readl (&ohci->regs->cmdstatus) & OHCI_HCR) != 0) 
     {
         if (--timeout == 0) 
         {
-            err("USB HC reset timed out!");
+            APP_ERROR("USB HC reset timed out!\r\n");
             return -1;
         }
         udelay (1);
     }
+    APP_WARN("hc_reset success\r\n");
     return 0;
 }
 
@@ -1465,7 +1472,7 @@ static int hc_start (ohci_t * ohci)
     //int ints;
     ohci->disabled = 1;
     /* Tell the controller where the control and bulk lists are
-    	 * The lists are empty now. */
+         * The lists are empty now. */
     writel (0, &ohci->regs->ed_controlhead);
     writel (0, &ohci->regs->ed_bulkhead);
     writel ((U32)ohci->hcca, &ohci->regs->hcca); /* a reset clears this */
@@ -1483,24 +1490,24 @@ static int hc_start (ohci_t * ohci)
     OHCI_INTR_UE | OHCI_INTR_FNO | OHCI_INTR_RHSC |
     OHCI_INTR_OC | OHCI_INTR_MIE);
     writel (mask, &ohci->regs->intrdisable);
-    // clear all interrupts//	
+    // clear all interrupts//   
     mask &= ~OHCI_INTR_MIE;                  //del
-    writel (mask, &ohci->regs->intrstatus);//del	
+    writel (mask, &ohci->regs->intrstatus);//del    
     // Choose the interrupts we care about now  - but w/o MIE //
     mask = (OHCI_INTR_RHSC | OHCI_INTR_UE | OHCI_INTR_WDH | OHCI_INTR_SO );
-    writel (mask, &ohci->regs->intrenable);	
-    #ifdef	OHCI_USE_NPS
+    writel (mask, &ohci->regs->intrenable); 
+    #ifdef  OHCI_USE_NPS
     /* required for AMD-756 and some Mac platforms */
     writel ((roothub_a (ohci) | RH_A_NPS) & ~RH_A_PSM,
     &ohci->regs->roothub.a);
     writel (RH_HS_LPSC, &ohci->regs->roothub.status);
-    #endif	/* OHCI_USE_NPS */
+    #endif  /* OHCI_USE_NPS */
 /*    
 #define mdelay(n) 
     {\
         unsigned long msec=(n); while (msec--) udelay(1000);\
     }
-	*/
+    */
     
     /* POTPGT delay is bits 24-31, in 2 ms units. */
     mdelay ((roothub_a (ohci) >> 23) & 0x1fe);
@@ -1532,7 +1539,7 @@ static int hc_interrupt (void)
     }
     else if ((ints &= readl (&regs->intrenable)) == 0) 
     {
-    	//ohci_dump (ohci, 1);
+        //ohci_dump (ohci, 1);
         //dbg("hc_interrupt: returning..");
         //=============du add 070302
         //APP_DEBUG("[ISR] hc_interrupt: returning... \r\n");
@@ -1559,7 +1566,7 @@ static int hc_interrupt (void)
         //err("OHCI Unrecoverable Error, controller usb-%s disabled ", ohci->slot_name);
         APP_ERROR("OHCI Unrecoverable Error, controller usb-%s disabled ", ohci->slot_name);
         /* e.g. due to PCI Master/Target Abort */
-        #ifdef	DEBUG
+        #ifdef  DEBUG
         ohci_dump (ohci, 1);
         #else
         wait_ms(1);
@@ -1602,79 +1609,79 @@ static int hc_interrupt (void)
 
 void hc_interrupt_irq (void)
 {
-	ohci_t *ohci = &gohci;
-	struct ohci_regs *regs = ohci->regs;
-	int ints;
-	int stat = -1;
+    ohci_t *ohci = &gohci;
+    struct ohci_regs *regs = ohci->regs;
+    int ints;
+    int stat = -1;
     s_UartPrint("i");
-	if ((ohci->hcca->done_head != 0) &&
-	     !(m32_swap (ohci->hcca->done_head) & 0x01)) {
-		ints =  OHCI_INTR_WDH;
-	} 
-	else if ((ints = readl (&regs->intrstatus)) == ~(U32)0) {
-		ohci->disabled++;
-		//err ("%s device removed!", ohci->slot_name);
-		//return -1;
-	} else if ((ints &= readl (&regs->intrenable)) == 0) {
+    if ((ohci->hcca->done_head != 0) &&
+         !(m32_swap (ohci->hcca->done_head) & 0x01)) {
+        ints =  OHCI_INTR_WDH;
+    } 
+    else if ((ints = readl (&regs->intrstatus)) == ~(U32)0) {
+        ohci->disabled++;
+        //err ("%s device removed!", ohci->slot_name);
+        //return -1;
+    } else if ((ints &= readl (&regs->intrenable)) == 0) {
                //ohci_dump (ohci, 1);
-		//dbg("hc_interrupt: returning..\r\n");
-		//ints = readl (&ohci->regs->intrstatus);
-		//s_UartPrint("read intrstatus=%x  %x\r\n",ints,rHcInterruptStatus);
-		//ints = readl (&ohci->regs->intrenable);
-		//s_UartPrint("read intrenable=%x %x\r\n",ints,rHcInterruptEnable);
-		//ints = readl (&ohci->regs->control);
-		//s_UartPrint("read contorl=%x %x\r\n",ints,rHcControl);
-		//ints = readl (&ohci->regs->cmdstatus);
-		//s_UartPrint("read cmdstatus=%x %x\r\n",ints,rHcCommonStatus);
+        //dbg("hc_interrupt: returning..\r\n");
+        //ints = readl (&ohci->regs->intrstatus);
+        //s_UartPrint("read intrstatus=%x  %x\r\n",ints,rHcInterruptStatus);
+        //ints = readl (&ohci->regs->intrenable);
+        //s_UartPrint("read intrenable=%x %x\r\n",ints,rHcInterruptEnable);
+        //ints = readl (&ohci->regs->control);
+        //s_UartPrint("read contorl=%x %x\r\n",ints,rHcControl);
+        //ints = readl (&ohci->regs->cmdstatus);
+        //s_UartPrint("read cmdstatus=%x %x\r\n",ints,rHcCommonStatus);
                s_UartPrint("r");
-		//return 0xff;
-	}
-	//dbg("Interrupt: %x frame: %x", ints, le16_to_cpu (ohci->hcca->frame_no)); 
-	if (ints & OHCI_INTR_RHSC) {
-		got_rhsc = 1;
-		stat = 0xff;
-	}
-	if (ints & OHCI_INTR_UE) {
-		ohci->disabled++;
-		err ("OHCI Unrecoverable Error, controller usb-%s disabled",
-			ohci->slot_name);
-		// e.g. due to PCI Master/Target Abort //
-#ifdef	DEBUG
-		//ohci_dump (ohci, 1);
+        //return 0xff;
+    }
+    //dbg("Interrupt: %x frame: %x", ints, le16_to_cpu (ohci->hcca->frame_no)); 
+    if (ints & OHCI_INTR_RHSC) {
+        got_rhsc = 1;
+        stat = 0xff;
+    }
+    if (ints & OHCI_INTR_UE) {
+        ohci->disabled++;
+        err ("OHCI Unrecoverable Error, controller usb-%s disabled",
+            ohci->slot_name);
+        // e.g. due to PCI Master/Target Abort //
+#ifdef  DEBUG
+        //ohci_dump (ohci, 1);
 #else
-		wait_ms(1);
+        wait_ms(1);
 #endif
-		//FIXME: be optimistic, hope that bug won't repeat often. ///
-		// Make some non-interrupt context restart the controller. ///
-		// Count and limit the retries though; either hardware or ///
-		// software errors can go forever...///
-		hc_reset (ohci);
-		//return -1;
-	}
-	if (ints & OHCI_INTR_WDH) {
-		wait_ms(1);
-		writel (OHCI_INTR_WDH, &regs->intrdisable);
-		stat = dl_done_list (&gohci, dl_reverse_done_list (&gohci));
-		writel (OHCI_INTR_WDH, &regs->intrenable);
-	}
-	if (ints & OHCI_INTR_SO) {
-		dbg("USB Schedule overrun\r\n");
-		writel (OHCI_INTR_SO, &regs->intrenable);
-		stat = -1;
-	}
-	// FIXME:  this assumes SOF (1/ms) interrupts don't get lost... //
-	if (ints & OHCI_INTR_SF) {
-		unsigned int frame = m16_swap (ohci->hcca->frame_no) & 1;
-		wait_ms(1);
-		writel (OHCI_INTR_SF, &regs->intrdisable);
-		if (ohci->ed_rm_list[frame] != NULL)
-			writel (OHCI_INTR_SF, &regs->intrenable);
-		stat = 0xff;
-	}
-	writel (ints, &regs->intrstatus);
-	//return stat;
-	hc_stat=stat;
-	return;
+        //FIXME: be optimistic, hope that bug won't repeat often. ///
+        // Make some non-interrupt context restart the controller. ///
+        // Count and limit the retries though; either hardware or ///
+        // software errors can go forever...///
+        hc_reset (ohci);
+        //return -1;
+    }
+    if (ints & OHCI_INTR_WDH) {
+        wait_ms(1);
+        writel (OHCI_INTR_WDH, &regs->intrdisable);
+        stat = dl_done_list (&gohci, dl_reverse_done_list (&gohci));
+        writel (OHCI_INTR_WDH, &regs->intrenable);
+    }
+    if (ints & OHCI_INTR_SO) {
+        dbg("USB Schedule overrun\r\n");
+        writel (OHCI_INTR_SO, &regs->intrenable);
+        stat = -1;
+    }
+    // FIXME:  this assumes SOF (1/ms) interrupts don't get lost... //
+    if (ints & OHCI_INTR_SF) {
+        unsigned int frame = m16_swap (ohci->hcca->frame_no) & 1;
+        wait_ms(1);
+        writel (OHCI_INTR_SF, &regs->intrdisable);
+        if (ohci->ed_rm_list[frame] != NULL)
+            writel (OHCI_INTR_SF, &regs->intrenable);
+        stat = 0xff;
+    }
+    writel (ints, &regs->intrstatus);
+    //return stat;
+    hc_stat=stat;
+    return;
 }
 
 
@@ -1703,65 +1710,64 @@ int usb_lowlevel_init(void)
 
 
  
-	/*
-    	 * Set the 48 MHz UPLL clocking. Values are taken from
-    	 * "PLL value selection guide", 6-23, s3c2410_UM.pdf.
-    	 */
-	//s_UartPrint("\r\n &(clk_power->CLKSLOW)=%0x\r\n",&(clk_power->CLKSLOW));
-	//s_UartPrint("\r\n CLKSLOW=%0x\r\n",clk_power->CLKSLOW);
+    /*
+     * Set the 48 MHz UPLL clocking. Values are taken from
+     * "PLL value selection guide", 6-23, s3c2410_UM.pdf.
+     */
+    //s_UartPrint("\r\n &(clk_power->CLKSLOW)=%0x\r\n",&(clk_power->CLKSLOW));
+    //s_UartPrint("\r\n CLKSLOW=%0x\r\n",clk_power->CLKSLOW);
     
-	clk_power->CLKSLOW |= UCLK_ON ; 
-	s_UartPrint("\r\n &(clk_power->UPLLCON)=%0x\r\n",&(clk_power->UPLLCON));
-	s_UartPrint("\r\n UPLLCON=%0x\r\n",clk_power->UPLLCON);
-	//s_UartPrint("\r\n &(clk_power->MPLLCON)=%0x\r\n",&(clk_power->MPLLCON));
-	//s_UartPrint("\r\n MPLLCON=%0x\r\n",clk_power->MPLLCON);
+    clk_power->CLKSLOW |= UCLK_ON ; 
+    APP_WARN(" addr: UPLLCON=%0x\r\n", &(clk_power->UPLLCON));
+    APP_WARN(" val: UPLLCON=%0x\r\n", clk_power->UPLLCON);
+    APP_WARN(" addr: MPLLCON=%0x\r\n", &(clk_power->MPLLCON));
+    APP_WARN(" val: MPLLCON=%0x\r\n", clk_power->MPLLCON);
 
     //clk_power->UPLLCON = 0x78023;    //((0x78 << 12) + (2 << 4) + 3);
     //upllvalue = 0x78023;//(0x78<<12)|(0x02<<4)|(0x03); 
     //clk_power->UPLLCON=0x38021;
-	//upllvalue = 0x38021;
-	upllvalue = 0x28041;
-	while (upllvalue != clk_power->UPLLCON) 
+    //upllvalue = 0x38021;
+    upllvalue = 0x28041;
+    while (upllvalue != clk_power->UPLLCON) 
     {
-        s_UartPrint("\r\n UPLLCON=%0x\r\n",clk_power->UPLLCON);
-		s_UartPrint("\r\n upllvalue=%0x\r\n",upllvalue);
-		s_getkey();
+        APP_WARN(" set UPLLCON(%0x)=%0x\r\n", clk_power->UPLLCON, upllvalue);
+        //s_getkey();
 
-		clk_power->UPLLCON = 0x28041;//0x78023;//((0x78 << 12) + (2 << 4) + 3);		
-		wait_ms(1);
+        clk_power->UPLLCON = upllvalue;//0x78023;//((0x78 << 12) + (2 << 4) + 3);     
+        wait_ms(1);
     }
-	
+    
     //gpio->MISCCR |= MISCCR_USBPAD; // 1 = use pads related USB for USB host //
     gpio->MISCCR &= ~MISCCR_USBPAD;//DP0DN0=HOST DP1DN1=DEVICE
     gpio->MISCCR &= ~(MISCCR_USB0_SUSPEND|MISCCR_USB1_SUSPEND); // 1 = use pads related USB for USB host 
-	//上面使能USB0 USB1,USB0是 USB host，USB1是USB Device
+    //上面使能USB0 USB1,USB0是 USB host，USB1是USB Device
 
     clk_power->CLKSLOW &= ~(UCLK_ON | MPLL_OFF | SLOW_BIT); 
 
     //clk_power->CLKSLOW &= ~UCLK_ON; 
     // Enable USB host clock.
     //clk_power->CLKCON |= CLKCON_USBH;//change by wqh 有问题，下面不能进行
-	s_UartPrint("\r\n clk_power->CLKCON=%0x\r\n",clk_power->CLKCON);
-	memset (&gohci, 0, sizeof (ohci_t));
+    APP_WARN("CLKCON=%0x\r\n", clk_power->CLKCON);
+    memset (&gohci, 0, sizeof (ohci_t));
     memset (&urb_priv, 0, sizeof (urb_priv_t));
 
     /* align the storage */
-	//不懂,为啥跟地址有关
+    //不懂,为啥跟地址有关
 
     if ((U32)&ghcca[0] & 0xff) 
     {
-        err("HCCA not aligned!!");
+        APP_ERROR("HCCA not aligned!!\r\n");
         return -1;
     }
 
-	phcca = &ghcca[0];
-    //info("aligned ghcca %p", phcca);
-    err("\r\n aligned ghcca %p \r\n", phcca);//aligned ghcca 301503e4
-	memset(&ohci_dev, 0, sizeof(struct ohci_device));
+    phcca = &ghcca[0];
+    APP_WARN("aligned ghcca %p\r\n", phcca);
+    //err("\r\n aligned ghcca %p \r\n", phcca);//aligned ghcca 301503e4
+    memset(&ohci_dev, 0, sizeof(struct ohci_device));
 
     if ((U32)&ohci_dev.ed[0] & 0x7) 
     {
-        err("\r\n EDs not aligned!! \r\n");
+        APP_ERROR("EDs not aligned!! \r\n");
         return -1;
     }
 
@@ -1769,7 +1775,7 @@ int usb_lowlevel_init(void)
 
     if ((U32)gtd & 0x7) 
     {
-        err("\r\n TDs not aligned!! \r\n");
+        APP_ERROR("TDs not aligned!! \r\n");
         return -1;
     }
 
@@ -1782,27 +1788,33 @@ int usb_lowlevel_init(void)
     gohci.regs = (struct ohci_regs *)S3C24X0_USB_HOST_BASE;
     gohci.flags = 0;
     gohci.slot_name = "s3c2410";
+    APP_WARN("hc_reset\r\n");
     if (hc_reset (&gohci) < 0) 
     {
+        APP_ERROR("can't start usb \r\n");
         hc_release_ohci (&gohci);
         /* Initialization failed */
-        clk_power->CLKCON &= ~CLKCON_USBH;
-        err("init_step 2\r\n");
+        APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
+        //clk_power->CLKCON &= ~CLKCON_USBH;
+        APP_WARN("disable CLKCON_USBH success\r\n");
         return -1;
     }
     /* FIXME this is a second HC reset; why?? */
     writel (gohci.hc_control = OHCI_USB_RESET, &gohci.regs->control);
     wait_ms (10);
+    APP_WARN("hc_start\r\n");
     if (hc_start (&gohci) < 0) 
     {
-        err("can't start usb-%s ", gohci.slot_name);
+        APP_ERROR("can't start usb-%s \r\n", gohci.slot_name);
         hc_release_ohci (&gohci);
         /* Initialization failed */
-        clk_power->CLKCON &= ~CLKCON_USBH;
+        APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
+        //clk_power->CLKCON &= ~CLKCON_USBH;
+        APP_WARN("disable CLKCON_USBH success\r\n");
         return -1;
     }
-	
-    #ifdef	DEBUG
+    
+    #ifdef  DEBUG
     ohci_dump (&gohci, 1);
     #else
     wait_ms(1);
@@ -1813,22 +1825,151 @@ int usb_lowlevel_init(void)
 }
 
 
-int usb_lowlevel_stop(void)
+/*-------------------------------------------------------------------------*/
+/*
+ * low level initalisation routine, called from usb.c
+ */
+//static char ohci_inited = 0;
+int usb_lowlevel_init_22(void)
 {
+    unsigned long upllvalue;
     S3C24X0_CLOCK_POWER * const clk_power = S3C24X0_GetBase_CLOCK_POWER();
-    #ifdef du_debug
-	s_UartPrint("[%d] usb_lowlevel_stop\r\n", __LINE__);
-	#endif
-    /* this gets called really early - before the controller has */
-    /* even been initialized! */
-    if (!ohci_inited)
-    return 0;
-    /* TODO release any interrupts, etc. */
-    /* call hc_release_ohci() here ? */
+    S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
+
     hc_reset (&gohci);
-    /* may not want to do this */
-    // clk_power->CLKCON &= ~CLKCON_USBH;//change by wqh 
+ 
+    /*
+     * Set the 48 MHz UPLL clocking. Values are taken from
+     * "PLL value selection guide", 6-23, s3c2410_UM.pdf.
+     */
+    //s_UartPrint("\r\n &(clk_power->CLKSLOW)=%0x\r\n",&(clk_power->CLKSLOW));
+    //s_UartPrint("\r\n CLKSLOW=%0x\r\n",clk_power->CLKSLOW);
+    
+    clk_power->CLKSLOW |= UCLK_ON ; 
+    APP_WARN(" addr: UPLLCON=%0x\r\n", &(clk_power->UPLLCON));
+    APP_WARN(" val: UPLLCON=%0x\r\n", clk_power->UPLLCON);
+    APP_WARN(" addr: MPLLCON=%0x\r\n", &(clk_power->MPLLCON));
+    APP_WARN(" val: MPLLCON=%0x\r\n", clk_power->MPLLCON);
+
+    //clk_power->UPLLCON = 0x78023;    //((0x78 << 12) + (2 << 4) + 3);
+    //upllvalue = 0x78023;//(0x78<<12)|(0x02<<4)|(0x03); 
+    //clk_power->UPLLCON=0x38021;
+    //upllvalue = 0x38021;
+    upllvalue = 0x28041;
+    while (upllvalue != clk_power->UPLLCON) 
+    {
+        APP_WARN(" set UPLLCON(%0x)=%0x\r\n", clk_power->UPLLCON, upllvalue);
+        //s_getkey();
+
+        clk_power->UPLLCON = upllvalue;//0x78023;//((0x78 << 12) + (2 << 4) + 3);     
+        wait_ms(1);
+    }
+    
+    //gpio->MISCCR |= MISCCR_USBPAD; // 1 = use pads related USB for USB host //
+    gpio->MISCCR &= ~MISCCR_USBPAD;//DP0DN0=HOST DP1DN1=DEVICE
+    gpio->MISCCR &= ~(MISCCR_USB0_SUSPEND|MISCCR_USB1_SUSPEND); // 1 = use pads related USB for USB host 
+    //上面使能USB0 USB1,USB0是 USB host，USB1是USB Device
+
+    clk_power->CLKSLOW &= ~(UCLK_ON | MPLL_OFF | SLOW_BIT); 
+
+    //clk_power->CLKSLOW &= ~UCLK_ON; 
+    // Enable USB host clock.
+    //clk_power->CLKCON |= CLKCON_USBH;//change by wqh 有问题，下面不能进行
+    APP_WARN("CLKCON=%0x\r\n", clk_power->CLKCON);
+    memset (&gohci, 0, sizeof (ohci_t));
+    memset (&urb_priv, 0, sizeof (urb_priv_t));
+
+    /* align the storage */
+    //不懂,为啥跟地址有关
+
+    if ((U32)&ghcca[0] & 0xff) 
+    {
+        APP_ERROR("HCCA not aligned!!\r\n");
+        return -1;
+    }
+
+    phcca = &ghcca[0];
+    APP_WARN("aligned ghcca %p\r\n", phcca);
+    //err("\r\n aligned ghcca %p \r\n", phcca);//aligned ghcca 301503e4
+    memset(&ohci_dev, 0, sizeof(struct ohci_device));
+
+    if ((U32)&ohci_dev.ed[0] & 0x7) 
+    {
+        APP_ERROR("EDs not aligned!! \r\n");
+        return -1;
+    }
+
+    memset(gtd, 0, sizeof(td_t) * (NUM_TD + 1));
+
+    if ((U32)gtd & 0x7) 
+    {
+        APP_ERROR("TDs not aligned!! \r\n");
+        return -1;
+    }
+
+    ptd = gtd;
+    gohci.hcca = phcca;
+    memset (phcca, 0, sizeof (struct ohci_hcca));
+    gohci.disabled = 1;
+    gohci.sleeping = 0;
+    gohci.irq = -1;
+    gohci.regs = (struct ohci_regs *)S3C24X0_USB_HOST_BASE;
+    gohci.flags = 0;
+    gohci.slot_name = "s3c2410";
+    APP_WARN("hc_reset\r\n");
+    if (hc_reset (&gohci) < 0) 
+    {
+        hc_release_ohci (&gohci);
+        /* Initialization failed */
+        APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
+        //clk_power->CLKCON &= ~CLKCON_USBH;
+        APP_WARN("disable CLKCON_USBH success\r\n");
+        return -1;
+    }
+    /* FIXME this is a second HC reset; why?? */
+    writel (gohci.hc_control = OHCI_USB_RESET, &gohci.regs->control);
+    wait_ms (10);
+    APP_WARN("hc_start\r\n");
+    if (hc_start (&gohci) < 0) 
+    {
+        APP_ERROR("can't start usb-%s ", gohci.slot_name);
+        hc_release_ohci (&gohci);
+        /* Initialization failed */
+        APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
+        //clk_power->CLKCON &= ~CLKCON_USBH;
+        APP_WARN("disable CLKCON_USBH success\r\n");
+        return -1;
+    }
+    
+    #ifdef  DEBUG
+    ohci_dump (&gohci, 1);
+    #else
+    wait_ms(1);
+    #endif
+    ohci_inited = 1;
+    urb_finished = 1;
     return 0;
 }
 
 
+
+int usb_lowlevel_stop(void)
+{
+    S3C24X0_CLOCK_POWER * const clk_power = S3C24X0_GetBase_CLOCK_POWER();
+    #ifdef du_debug
+    APP_WARN(" usb_lowlevel_stop\r\n");
+    #endif
+    /* this gets called really early - before the controller has */
+    /* even been initialized! */
+    if (!ohci_inited)
+        return 0;
+    /* TODO release any interrupts, etc. */
+    /* call hc_release_ohci() here ? */
+    APP_WARN("hc_reset\r\n");
+    hc_reset (&gohci);
+    APP_WARN("disable CLKCON_USBH(%p) = %08x\r\n", &(clk_power->CLKCON), (clk_power->CLKCON));
+    /* may not want to do this */
+    //clk_power->CLKCON &= ~CLKCON_USBH;//change by wqh 
+    APP_WARN("disable CLKCON_USBH success\r\n");
+    return 0;
+}

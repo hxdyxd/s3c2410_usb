@@ -206,6 +206,7 @@ struct usb_device
  */
 //#if defined(CONFIG_USB_UHCI) || defined(CONFIG_USB_OHCI) || defined (CONFIG_USB_SL811HS)
 int usb_lowlevel_init(void);
+int usb_lowlevel_init_22(void);
 int usb_lowlevel_stop(void);
 int submit_bulk_msg(struct usb_device *dev, unsigned long pipe, void *buffer,int transfer_len);
 int submit_control_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
@@ -239,11 +240,12 @@ typedef struct block_dev_desc
     unsigned long *buffer);
 }block_dev_desc_t;
 
-
+int usb_scan_devices(void);
 block_dev_desc_t *usb_stor_get_dev(int index);
 int usb_stor_scan(int mode);
 void usb_stor_info(void);
 /* routines */
+int usb_init_22(void);
 int usb_init(void); /* initialize the USB Controller */
 int usb_stop(void); /* stop the USB Controller */
 int usb_set_protocol(struct usb_device *dev, int ifnum, int protocol);

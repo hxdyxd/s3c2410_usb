@@ -13,6 +13,6 @@ int s_usbhost_stor(void);
 int s_usbhost_info(int argc, char **argv);
 int s_usbhost_start(void);
 int s_usbhost_read(int dev, unsigned long rblk,unsigned long rcnt,unsigned char* rbuffer);
-void usb_scan_devices(void);
+int usb_scan_devices(void);
 
 #endif /* _CMD_USB_H_ */

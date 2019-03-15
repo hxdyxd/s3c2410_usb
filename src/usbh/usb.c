@@ -74,7 +74,6 @@ extern void hc_interrupt_irq (void);
 /**********************************************************************
  * some forward declerations...
  */
-void usb_scan_devices(void);
 int  usb_hub_probe(struct usb_device *dev, int ifnum);
 void usb_hub_reset(void);
 void udelay (unsigned long usec)
@@ -130,7 +129,7 @@ void TestWaitMs(void)
 int usb_init(void)
 {
     int result;
-    s_SetIRQHandler(INT_USBH, hc_interrupt_irq );
+    //s_SetIRQHandler(INT_USBH, hc_interrupt_irq );
     running=0;
     dev_index=0;
     asynch_allowed=1;
@@ -141,9 +140,12 @@ int usb_init(void)
     /* if lowlevel init is OK, scan the bus for devices i.e. search HUBs and configure them */
     if(result==0) 
     {
-        
         running=1;
-        usb_scan_devices();
+        APP_WARN("usb_scan_devices()\r\n");
+        if(usb_scan_devices() != 0) {
+            APP_ERROR("usb_scan_devices() FAILED\r\n");
+            return -1;
+        }
         return 0;
     }
     else 
@@ -154,6 +156,38 @@ int usb_init(void)
 }
 
 
+/***************************************************************************
+ * Init USB Device
+ */
+int usb_init_22(void)
+{
+    int result;
+    //s_SetIRQHandler(INT_USBH, hc_interrupt_irq );
+    running=0;
+    dev_index=0;
+    asynch_allowed=1;
+    usb_hub_reset();
+    /* init low_level USB */
+    //s_UartPrint("USB:   ");
+    result = usb_lowlevel_init_22();
+    /* if lowlevel init is OK, scan the bus for devices i.e. search HUBs and configure them */
+    if(result==0) 
+    {
+        running=1;
+        APP_WARN("usb_scan_devices()\r\n");
+        if(usb_scan_devices() != 0) {
+            APP_ERROR("usb_scan_devices() FAILED\r\n");
+            return -1;
+        }
+        return 0;
+    }
+    else 
+    {
+        s_UartPrint("Error, couldn't init Lowlevel part\r\n");
+        return -1;
+    }
+}
+
 /******************************************************************************
  * Stop USB this stops the LowLevel Part and deregisters USB devices.
  */
@@ -163,6 +197,7 @@ int usb_stop(void)
 	
     usb_hub_reset();
     return usb_lowlevel_stop();
+    return 0;
 }
 
 
@@ -855,13 +890,12 @@ int usb_new_device(struct usb_device *dev)
     }
     }
     #else
-    APP_DEBUG("and this is the old and known way of initializing devices\r\n");
     /* and this is the old and known way of initializing devices */
     //s_UartPrint("NEW_step 1\r\n");
     err = usb_get_descriptor(dev, USB_DT_DEVICE, 0, &dev->descriptor, 8);
     if (err < 8) 
     {
-        s_UartPrint("\r\n      USB device not responding, giving up (status=%lX)\r\n",dev->status);
+        APP_ERROR("\r\n      USB device not responding, giving up (status=%lX)\r\n",dev->status);
         return 1;
     }
     //s_UartPrint("NEW_step 3 err=%d\r\n",err);
@@ -881,8 +915,8 @@ int usb_new_device(struct usb_device *dev)
     //s_UartPrint("NEW_step 5\r\n");
     if (err < 0) 
     {
-        s_UartPrint("\r\n      USB device not accepting new address (error=%lX)\r\n", dev->status);
-        s_UartPrint("NEW_step 6\r\n");
+        APP_ERROR("\r\n      USB device not accepting new address (error=%lX)\r\n", dev->status);
+        APP_ERROR("NEW_step 6\r\n");
         return 1;
     }
     wait_ms(10);	/* Let the SET_ADDRESS settle */
@@ -892,10 +926,11 @@ int usb_new_device(struct usb_device *dev)
     err = usb_get_descriptor(dev, USB_DT_DEVICE, 0, &dev->descriptor, sizeof(dev->descriptor));
     if (err < tmp) 
     {
-        if (err < 0)
-        s_UartPrint("unable to get device descriptor (error=%d)\r\n",err);
-        else
-        s_UartPrint("USB device descriptor short read (expected %i, got %i)\r\n",tmp,err);
+        if (err < 0) {
+            APP_ERROR("unable to get device descriptor (error=%d)\r\n",err);
+        } else {
+            APP_ERROR("USB device descriptor short read (expected %i, got %i)\r\n",tmp,err);
+        }
         s_UartPrint("NEW_step 8\r\n");
         return 1;
     }
@@ -955,7 +990,7 @@ int usb_new_device(struct usb_device *dev)
 
 
 /* build device Tree  */
-void usb_scan_devices(void)
+int usb_scan_devices(void)
 {
     int i;
     struct usb_device *dev;
@@ -971,7 +1006,7 @@ void usb_scan_devices(void)
     dev=usb_alloc_new_device();
     s_UartPrint("scan_step 2\r\n");
 	s_UartPrint("dev=%d",dev);
-    usb_new_device(dev);
+    return usb_new_device(dev);
     //s_UartPrint("scan_step 3\r\n");
     //s_UartPrint("%d USB Device(s) found\r\n",dev_index);
     /* insert "driver" if possible */

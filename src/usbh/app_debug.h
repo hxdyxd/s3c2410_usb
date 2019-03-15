@@ -30,7 +30,7 @@
 					s_UartPrint("\033[1;40;33mWARN\033[0m ");\
                     s_UartPrint(__VA_ARGS__);}
 
-#define APP_DEBUG(...) if(1) {\
+#define APP_DEBUG(...) if(0) {\
 					s_UartPrint("\033[40;32m[%d]\033[0m \033[2;40;33m%s(%d)\033[0m: ",\
 					 TIME_COUNT(), __FUNCTION__, __LINE__);\
                     s_UartPrint(__VA_ARGS__);}

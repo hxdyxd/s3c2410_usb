@@ -335,8 +335,8 @@ typedef struct ohci
     struct usb_device *dev[32];
     struct virt_root_hub rh;
     const char	*slot_name;
-} 
-ohci_t;
+} ohci_t;
+
 #define NUM_EDS 8		/* num of preallocated endpoint descriptors */
 struct ohci_device 
 {
@@ -382,5 +382,3 @@ ed_free (struct ed *ed)
 {
     ed->usb_dev = NULL;
 }
-
-

@@ -537,9 +537,10 @@ int s_usbhost_start(void)
     //struct usb_device *dev = NULL;
     //block_dev_desc_t *stor_dev;
      
-    usb_stop();
+    //usb_stop();
+    
     s_UartPrint("(Re)start USB...\r\n");
-    i = usb_init();
+    i = usb_init_22();
     /* try to recognize storage devices immediately */
     if (i >= 0) {
         usb_stor_curr_dev = usb_stor_scan(1);
