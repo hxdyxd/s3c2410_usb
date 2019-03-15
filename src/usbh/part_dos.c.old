@@ -1,0 +1,229 @@
+
+#include "part.h"
+#include "part_dos.h"
+/* Convert char[4] in little endian format to the host format integer
+ */
+static __inline int le32_to_int(unsigned char *le32)
+{
+    return ((le32[3] << 24) +
+    (le32[2] << 16) +
+    (le32[1] << 8) +
+    le32[0]
+    );
+}
+
+
+static __inline int is_extended(int part_type)
+{
+    return (part_type == 0x5 ||
+    part_type == 0xf ||
+    part_type == 0x85);
+}
+
+
+static void print_one_part (dos_partition_t *p, int ext_part_sector, int part_num)
+{
+    int lba_start = ext_part_sector + le32_to_int (p->start4);
+    int lba_size  = le32_to_int (p->size4);
+    s_UartPrint("%5d\t\t%10d\t%10d\t%2x%s\r\n",
+    part_num, lba_start, lba_size, p->sys_ind,
+    (is_extended (p->sys_ind) ? " Extd" : ""));
+}
+
+
+static int test_block_type(unsigned char *buffer)
+{
+    if((buffer[DOS_PART_MAGIC_OFFSET + 0] != 0x55) ||
+    (buffer[DOS_PART_MAGIC_OFFSET + 1] != 0xaa) ) 
+    {
+        return (-1);
+    } 
+    /* no DOS Signature at all */
+    if(strncmp((char *)&buffer[DOS_PBR_FSTYPE_OFFSET],"FAT",3)==0)
+    return DOS_PBR; /* is PBR */
+    return DOS_MBR;	    /* Is MBR */
+}
+
+
+int test_part_dos (block_dev_desc_t *dev_desc)
+{
+    unsigned char buffer[DEFAULT_SECTOR_SIZE];
+    if ((dev_desc->block_read(dev_desc->dev, 0, 1, (unsigned long *) buffer) != 1) ||
+    (buffer[DOS_PART_MAGIC_OFFSET + 0] != 0x55) ||
+    (buffer[DOS_PART_MAGIC_OFFSET + 1] != 0xaa) ) 
+    {
+        return (-1);
+    }
+    return (0);
+}
+
+
+/*  Print a partition that is relative to its Extended partition table
+ */
+static void print_partition_extended (block_dev_desc_t *dev_desc, int ext_part_sector, int relative,
+int part_num)
+{
+    unsigned char buffer[DEFAULT_SECTOR_SIZE];
+    dos_partition_t *pt;
+    int i;
+    if (dev_desc->block_read(dev_desc->dev, ext_part_sector, 1, (unsigned long *) buffer) != 1) 
+    {
+        s_UartPrint("** Can't read partition table on %d:%d **\r\n",
+        dev_desc->dev, ext_part_sector);
+        return;
+    }
+    i=test_block_type(buffer);
+    if(i==-1) 
+    {
+        s_UartPrint("bad MBR sector signature 0x%02x%02x\r\n",
+        buffer[DOS_PART_MAGIC_OFFSET],
+        buffer[DOS_PART_MAGIC_OFFSET + 1]);
+        return;
+    }
+    if(i==DOS_PBR) 
+    {
+        s_UartPrint("    1\t\t         0\t%10ld\t%2x\r\n",
+        dev_desc->lba, buffer[DOS_PBR_MEDIA_TYPE_OFFSET]);
+        return;
+    }
+    /* Print all primary/logical partitions */
+    pt = (dos_partition_t *) (buffer + DOS_PART_TBL_OFFSET);
+    for (i = 0; i < 4; i++, pt++) 
+    {
+        /*
+        		 * fdisk does not show the extended partitions that
+        		 * are not in the MBR
+        		 */
+        if ((pt->sys_ind != 0) &&
+        (ext_part_sector == 0 || !is_extended (pt->sys_ind)) ) 
+        {
+            print_one_part (pt, ext_part_sector, part_num);
+        }
+        /* Reverse engr the fdisk part# assignment rule! */
+        if ((ext_part_sector == 0) ||
+        (pt->sys_ind != 0 && !is_extended (pt->sys_ind)) ) 
+        {
+            part_num++;
+        }
+    }
+    /* Follows the extended partitions */
+    pt = (dos_partition_t *) (buffer + DOS_PART_TBL_OFFSET);
+    for (i = 0; i < 4; i++, pt++) 
+    {
+        if (is_extended (pt->sys_ind)) 
+        {
+            int lba_start = le32_to_int (pt->start4) + relative;
+            print_partition_extended (dev_desc, lba_start,
+            ext_part_sector == 0  ? lba_start
+            : relative,
+            part_num);
+        }
+    }
+    return;
+}
+
+
+/*  Print a partition that is relative to its Extended partition table
+ */
+static int get_partition_info_extended (block_dev_desc_t *dev_desc, int ext_part_sector,
+int relative, int part_num,
+int which_part, disk_partition_t *info)
+{
+    unsigned char buffer[DEFAULT_SECTOR_SIZE];
+    dos_partition_t *pt;
+    int i;
+    if (dev_desc->block_read (dev_desc->dev, ext_part_sector, 1, (unsigned long *) buffer) != 1) 
+    {
+        s_UartPrint("** Can't read partition table on %d:%d **\r\n",
+        dev_desc->dev, ext_part_sector);
+        return -1;
+    }
+    //add by wqh for debug
+    s_UartPrint("** AAAA: block_read (%d, 1) **\r\n", ext_part_sector);
+    for(i=0;i<DEFAULT_SECTOR_SIZE;i++)  s_UartPrint("[%03d]:%02x \r\n" ,  i ,buffer[i]);
+    if (buffer[DOS_PART_MAGIC_OFFSET] != 0x55 ||
+    buffer[DOS_PART_MAGIC_OFFSET + 1] != 0xaa) 
+    {
+        s_UartPrint("bad MBR sector signature 0x%02x%02x\r\n",
+        buffer[DOS_PART_MAGIC_OFFSET],
+        buffer[DOS_PART_MAGIC_OFFSET + 1]);
+        return -1;
+    }
+    /* Print all primary/logical partitions */
+    pt = (dos_partition_t *) (buffer + DOS_PART_TBL_OFFSET);
+    for (i = 0; i < 4; i++, pt++) 
+    {
+        /*
+        		 * fdisk does not show the extended partitions that
+        		 * are not in the MBR
+        		 */
+        if ((pt->sys_ind != 0) &&
+        (part_num == which_part) &&
+        (is_extended(pt->sys_ind) == 0)) 
+        {
+            info->blksz = 512;
+            info->start = ext_part_sector + le32_to_int (pt->start4);
+            info->size  = le32_to_int (pt->size4);
+            //add by wqh for debug
+            s_UartPrint("** BBBB: start=%d  size=%d **\r\n", info->start,info->size);
+            switch(dev_desc->if_type) 
+            {
+            case IF_TYPE_IDE:
+            case IF_TYPE_ATAPI:
+                sprintf ((char *)info->name, "hd%c%d\r\n", 'a' + dev_desc->dev, part_num);
+                break;
+            case IF_TYPE_SCSI:
+                sprintf ((char *)info->name, "sd%c%d\r\n", 'a' + dev_desc->dev, part_num);
+                break;
+            case IF_TYPE_USB:
+                sprintf ((char *)info->name, "usbd%c%d\r\n", 'a' + dev_desc->dev, part_num);
+                break;
+            case IF_TYPE_DOC:
+                sprintf ((char *)info->name, "docd%c%d\r\n", 'a' + dev_desc->dev, part_num);
+                break;
+            default:
+                sprintf ((char *)info->name, "xx%c%d\r\n", 'a' + dev_desc->dev, part_num);
+                break;
+            }
+            /* sprintf(info->type, "%d, pt->sys_ind); */
+            sprintf ((char *)info->type, "U-Boot");
+            return 0;
+        }
+        /* Reverse engr the fdisk part# assignment rule! */
+        if ((ext_part_sector == 0) ||
+        (pt->sys_ind != 0 && !is_extended (pt->sys_ind)) ) 
+        {
+            part_num++;
+        }
+    }
+    //add by wqh for debug
+    s_UartPrint("** ccccc: part_num=%d  **\r\n", part_num);
+    /* Follows the extended partitions */
+    pt = (dos_partition_t *) (buffer + DOS_PART_TBL_OFFSET);
+    for (i = 0; i < 4; i++, pt++) 
+    {
+        if (is_extended (pt->sys_ind)) 
+        {
+            int lba_start = le32_to_int (pt->start4) + relative;
+            return get_partition_info_extended (dev_desc, lba_start,
+            ext_part_sector == 0 ? lba_start : relative,
+            part_num, which_part, info);
+        }
+    }
+    return -1;
+}
+
+
+void print_part_dos (block_dev_desc_t *dev_desc)
+{
+    s_UartPrint("Partition     Start Sector     Num Sectors     Type\r\n");
+    print_partition_extended (dev_desc, 0, 0, 1);
+}
+
+
+int get_partition_info_dos (block_dev_desc_t *dev_desc, int part, disk_partition_t * info)
+{
+    return get_partition_info_extended (dev_desc, 0, 0, 1, part, info);
+}
+
+

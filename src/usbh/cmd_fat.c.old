@@ -1,0 +1,123 @@
+
+#include "fat.h"
+block_dev_desc_t *get_dev (char* ifname, int dev)
+{
+    if (strncmp(ifname,"usb",3)==0) 
+    {
+        extern block_dev_desc_t * usb_stor_get_dev(int dev);
+        return(usb_stor_get_dev(dev));
+    }
+    return NULL;
+}
+
+
+/*=========================================================================
+	"fatload - load binary file from a dos filesystem\r\n",
+	"<interface> <dev[:part]>  <addr> <filename> [bytes]\r\n"
+	"    - load binary file 'filename' from 'dev' on 'interface'\r\n"
+	"      to address 'addr' from dos filesystem\r\n"
+===========================================================================*/
+int do_fat_fsload (const char *filename,unsigned char *buffer,unsigned long addr,unsigned long count)
+{
+    long size,i;
+    block_dev_desc_t *dev_desc=NULL;
+    int dev=0;
+    int part=1;
+     
+    dev_desc=get_dev("usb",dev);
+    if (dev_desc==NULL) 
+    {
+         
+        //Invalid boot device **//
+        return -1;
+    }
+    if (fat_register_device(dev_desc,part)!=0) 
+    {
+         
+        // Unable to use %d:%d for fatload //
+        return -1;
+    }
+    size = file_fat_read (filename, buffer, count,addr);
+    if(size==-1) 
+    {
+         
+        // Unable to read \"\" from %s :%d **//
+        return -1;
+    }
+    #ifdef DEBUG
+    //"\r\n%ld bytes read\r\n", size);
+    for(i=0;i<size;i++)
+    FAT_DPRINT("%c",buffer[i]);
+    #endif	
+    //sprintf(buf, "%lX", size);
+    //setenv("filesize", buf);
+     
+    return (int)size;
+}
+
+
+/*==============================================================
+	"fatls   - list files in a directory (default /)\r\n",
+====================================================================*/
+int do_fat_ls (const char *pathandfilename)
+{
+    int ret;
+    int dev=0;
+    int part=1;
+    block_dev_desc_t *dev_desc=NULL;
+     	
+    dev_desc=get_dev("usb",dev);
+	s_UartPrint("dev_desc=get_dev('usb',dev);\r\n");
+    if (dev_desc==NULL) 
+    {
+         
+        //** Invalid boot device **//
+        return 1;
+    }
+    if (fat_register_device(dev_desc,part)!=0) 
+    {
+         
+        // Unable to use //for fatls //
+        return 1;
+    }
+	s_UartPrint("if (fat_register_device(dev_desc,part)!=0)\r\n");
+    ret = file_fat_ls (pathandfilename);
+	s_UartPrint("ret = file_fat_ls (pathandfilename);\r\n");
+	s_UartPrint("ret=%d\r\n",ret);
+    //if(ret!=0)	FAT_DPRINT("No Fat FS detected\r\n");
+     	
+    return (ret);
+}
+
+
+/*=========================================================================
+	"    - print information about filesystem "
+	return 0:success
+	           1:fail
+=============================================================================*/
+int do_fat_fsinfo (void)
+{
+    int dev=0;
+    int part=1;
+    int ret;
+    block_dev_desc_t *dev_desc=NULL;
+     
+    dev_desc=get_dev("usb",dev);
+    if (dev_desc==NULL) 
+    {
+         
+        // Invalid boot device //
+        return 1;
+    }
+    if (fat_register_device(dev_desc,part)!=0) 
+    {
+         
+        // Unable to use %d:%d for fatinfo //
+        return 1;
+    }
+    ret=file_fat_detectfs ();
+     
+    return ret;
+}
+
+
