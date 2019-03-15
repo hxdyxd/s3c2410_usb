@@ -25,8 +25,15 @@
  * MA 02111-1307 USA
  *
  */
+//#include <string.h>
+//#include "ctype.h"
 #include "usb.h"
 #include "s3c2410.h"
+
+//by hxdyxd
+#include "app_debug.h"
+
+
 static int usb_stor_curr_dev=-1; /* current device */
 /* some display routines (info command) */
 unsigned long simple_strtoul(const char *cp,char **endp,unsigned int base)
@@ -194,15 +201,23 @@ void usb_display_desc(struct usb_device *dev)
         if (dev->descriptor.bDeviceClass) 
         {
             s_UartPrint(" - Class: ");
-            usb_display_class_sub(dev->descriptor.bDeviceClass,dev->descriptor.bDeviceSubClass,dev->descriptor.bDeviceProtocol);
+            usb_display_class_sub(dev->descriptor.bDeviceClass,
+                dev->descriptor.bDeviceSubClass,
+                dev->descriptor.bDeviceProtocol);
             s_UartPrint("\r\n");
         }
         else 
         {
             s_UartPrint(" - Class: (from Interface) %s\r\n",usb_get_class_desc(dev->config.if_desc[0].bInterfaceClass));
         }
-        s_UartPrint(" - PacketSize: %d  Configurations: %d\r\n",dev->descriptor.bMaxPacketSize0,dev->descriptor.bNumConfigurations);
-        s_UartPrint(" - Vendor: 0x%04x  Product 0x%04x Version %d.%d\r\n",dev->descriptor.idVendor,dev->descriptor.idProduct,(dev->descriptor.bcdDevice>>8) & 0xff,dev->descriptor.bcdDevice & 0xff);
+        s_UartPrint(" - PacketSize: %d  Configurations: %d\r\n",
+            dev->descriptor.bMaxPacketSize0,
+            dev->descriptor.bNumConfigurations);
+        s_UartPrint(" - Vendor: 0x%04x  Product 0x%04x Version %d.%d\r\n",
+            dev->descriptor.idVendor,
+            dev->descriptor.idProduct,
+            (dev->descriptor.bcdDevice>>8) & 0xff,
+            dev->descriptor.bcdDevice & 0xff);
     }
 }
 
@@ -508,8 +523,9 @@ int s_usbhost_reset(void)
     s_UartPrint("[%d] Reset USB...\r\n", __LINE__);
     i = usb_init();
     /* try to recognize storage devices immediately */
-    if (i >= 0)
-    usb_stor_curr_dev = usb_stor_scan(1);
+    if (i >= 0) {
+        usb_stor_curr_dev = usb_stor_scan(1);
+    }
      
     return 0;
 }
@@ -525,13 +541,23 @@ int s_usbhost_start(void)
     s_UartPrint("(Re)start USB...\r\n");
     i = usb_init();
     /* try to recognize storage devices immediately */
-    if (i >= 0)
-    	{
-    	
-    usb_stor_curr_dev = usb_stor_scan(1);
-    	}
+    if (i >= 0) {
+        usb_stor_curr_dev = usb_stor_scan(1);
+    }
     return 0;
 }
+
+int s_usbhost_scan(void)
+{
+     
+    //s_UartPrint("  NOTE: this command is obsolete and will be phased out\r\n");
+    //s_UartPrint("  please use 'usb storage' for USB storage devices information\r\n\r\n");
+    usb_stor_curr_dev = usb_stor_scan(1);
+    usb_stor_info();
+     
+    return 0;
+}
+
 
 
 int s_usbhost_stop(void)
@@ -558,7 +584,7 @@ int s_usbhost_info(int argc, char *argv[])
 {
     int i;
     struct usb_device *dev = NULL;
-    block_dev_desc_t *stor_dev;
+    //block_dev_desc_t *stor_dev;
     int d;
      
     if (argc==2) 
@@ -603,18 +629,6 @@ int s_usbhost_info(int argc, char *argv[])
 }
 
 
-int s_usbhost_scan(void)
-{
-     
-    //s_UartPrint("  NOTE: this command is obsolete and will be phased out\r\n");
-    //s_UartPrint("  please use 'usb storage' for USB storage devices information\r\n\r\n");
-    usb_stor_curr_dev = usb_stor_scan(1);
-    usb_stor_info();
-     
-    return 0;
-}
-
-
 //int s_usbhost_stor(void)
 //{
 //	 
@@ -622,97 +636,83 @@ int s_usbhost_scan(void)
 //	 
 //	return 0;
 //}
-int s_usbhost_part(void)
-{
-    int i;
-    //struct usb_device *dev = NULL;
-    block_dev_desc_t *stor_dev;
-    int devno, ok;
-     
-    for (ok=0, devno=0; devno<USB_MAX_STOR_DEV; ++devno) 
-    {
-        stor_dev=usb_stor_get_dev(devno);
-        if (stor_dev->type!=DEV_TYPE_UNKNOWN) 
-        {
-            ok++;
-            if (devno)
-            s_UartPrint("\r\n");
-            s_UartPrint("print_part of %x\r\n",devno);
-            //print_part(stor_dev);
-        }
-    }
-     
-    if (!ok) 
-    {
-        s_UartPrint("\r\nno USB devices available\r\n");
-        return 1;
-    }
-    return 0;
-}
-
-
-int s_usbhost_read(unsigned long rblk,unsigned long rcnt,unsigned char* rbuffer)
-{
-    //int i;
-    //struct usb_device *dev = NULL;
-    block_dev_desc_t *stor_dev;
-    unsigned long addr =(unsigned long)rbuffer;
-    unsigned long blk  = rblk;
-    unsigned long cnt  = rcnt;
-    unsigned long have_read;
-    
-    if (usb_stor_curr_dev < 0)
-    {
-        s_UartPrint("no current device selected\r\n");
-        return 1;
-    }
-
-    s_UartPrint("USB read: device %d block # %ld, count %ld  addr %08x... \r\n",\
-    usb_stor_curr_dev, blk, cnt,addr);
-
-    printf("*******%d \r\n", __LINE__);
-
-    stor_dev=usb_stor_get_dev(usb_stor_curr_dev);
-
-    printf("*******%d \r\n", __LINE__);
-
-    have_read = stor_dev->block_read(usb_stor_curr_dev, blk, cnt, (ulong *)addr);
-
-    printf("*******%d \r\n", __LINE__);
-
-    s_UartPrint("%ld blocks read: %s\r\n", have_read, (have_read == cnt) ? "OK" : "ERROR");
-     
-    if (have_read == cnt)
-    {
-        s_UartPrint("buff[0]=%x\r\n",rbuffer[0]);
-        s_UartPrint("buff[1]=%x\r\n",rbuffer[1]);
-        return 0;
-    }
-    return 1;
-}
+//int s_usbhost_part(void)
+//{
+//    int i;
+//    //struct usb_device *dev = NULL;
+//    block_dev_desc_t *stor_dev;
+//    int devno, ok;
+//     
+//    for (ok=0, devno=0; devno<USB_MAX_STOR_DEV; ++devno) 
+//    {
+//        stor_dev=usb_stor_get_dev(devno);
+//        if (stor_dev->type!=DEV_TYPE_UNKNOWN) 
+//        {
+//            ok++;
+//            if (devno)
+//            s_UartPrint("\r\n");
+//            s_UartPrint("print_part of %x\r\n",devno);
+//            //print_part(stor_dev);
+//        }
+//    }
+//     
+//    if (!ok) 
+//    {
+//        s_UartPrint("\r\nno USB devices available\r\n");
+//        return 1;
+//    }
+//    return 0;
+//}
+//
 
 /*display the usb status, storage device message if there is have one*/
+/*
+ *set current device
+ */
 int s_usbhost_dev(int dev)
 {
     block_dev_desc_t *stor_dev;
     s_UartPrint("USB device %d: \r\n", dev);
     if (dev >= USB_MAX_STOR_DEV) 
     {
-        s_UartPrint("unknown device\r\n");
+        APP_WARN("unknown device\r\n");
         return 1;
     }
-     
-    s_UartPrint("Device %d:\r\n", dev);
     stor_dev = usb_stor_get_dev(dev);
-    //dev_print(stor_dev);
      
     if (stor_dev->type == DEV_TYPE_UNKNOWN) 
     {
+        APP_WARN("unknown device type\r\n");
         return 1;
     }
     usb_stor_curr_dev = dev;
-    s_UartPrint("... is now current device\r\n");
-    return 0;	
+    s_UartPrint("set %d is now current device\r\n", usb_stor_curr_dev);
+    return 0;   
+}
+
+
+int s_usbhost_read(int dev, unsigned long rblk,unsigned long rcnt,unsigned char* rbuffer)
+{
+    unsigned long addr =(unsigned long)rbuffer;
+    unsigned long blk  = rblk;
+    unsigned long cnt  = rcnt;
+    unsigned long have_read;
+
+    if(s_usbhost_dev(dev) == 1) {
+        return 1;
+    }
+
+    APP_DEBUG("USB read: device %d block # %ld, count %ld  addr %08x... \r\n",\
+    dev, blk, cnt, addr);
+    have_read = usb_stor_read(dev, blk, cnt, (ulong *)addr);
+     
+    if (have_read != cnt)
+    {
+        APP_ERROR("%ld blocks read: ERROR\r\n", have_read);
+        return 1;
+    }
+    APP_DEBUG("%ld blocks read: OK\r\n", have_read);
+    return 0;
 }
 
 
@@ -884,4 +884,4 @@ int s_usbhost_dev(int dev)
 //    return 1;
 //}
 
-
+/* end of file*/

@@ -8,6 +8,9 @@
 //#include "rtcapi.h"
 #include "cmd_usb.h"
 
+//by hxdyxd
+#include "app_debug.h"
+
 /************************************************************/
 
 
@@ -100,15 +103,14 @@ int Main(void)
     s_usbhost_reset();
     
     
-    puts("Usb Host Test!\r\n");
+    APP_DEBUG("Usb Host Example!\r\n");
     
     
     while(1)
     {
         printf("---------------------\r\n");
         printf("1-Start  2-Stop   3-Tree \r\n");
-        printf("4-Scan   6-Part \r\n");
-        printf("7-Info   8-Read   9-Dev \r\n");
+        printf("4-Scan  5-Build-Tree  7-Info   8-Read\r\n");
         printf("---------------------\r\n");
         
         printf("\r\nPlease Select Function Key:\r\n");
@@ -117,50 +119,39 @@ int Main(void)
         switch(cmd)
         {
         case '1':
-            printf("s_usbhost_start() \r\n");
+            APP_DEBUG("s_usbhost_start() \r\n");
             s_usbhost_start();
             break;
         case '2':
-            //s_UartPrint("s_usbhost_stop() \r\n");
-            //s_usbhost_stop();
-            printf("s_usbhost_dev(2, tempbuf) \r\n");
-            //s_usbhost_read(2,8,buffer);
+            APP_DEBUG("s_usbhost_stop() \r\n");
+            s_usbhost_stop();
             break;
         case '3':
-            printf("s_usbhost_tree() \r\n");
+            APP_DEBUG("s_usbhost_tree() \r\n");
             s_usbhost_tree();
             break;
         case '4':
-            printf("s_usbhost_scan() \r\n");
+            APP_DEBUG("s_usbhost_scan() \r\n");
             s_usbhost_scan();
             break;
-        case '6':
-            printf("s_usbhost_part() \r\n");
-            s_usbhost_part();
+        case '5':
+            APP_DEBUG("usb_scan_devices() \r\n");
+            usb_scan_devices();
             break;
         case '7':
-            printf("s_usbhost_info(2, tempbuf) \r\n");
+            APP_DEBUG("s_usbhost_info(2, tempbuf) \r\n");
             s_usbhost_info(2, (char **)tempbuf);
             break;
         case '8':
-            printf("s_usbhost_read(5, tempbuf) \r\n");
-
-            s_usbhost_dev(0);
-
-            s_usbhost_read(0, 1, buffer);
+            APP_DEBUG("s_usbhost_read(0, 0, 1, buffer) \r\n");
+            s_usbhost_read(0, 0, 1, buffer);
             for(j = 0; j < 0x200; j++)
             {
                 printf("%02X ", buffer[j]);
             }
-
-
+            printf("\r\n");
 
             break;
-        case '9':
-            printf("s_usbhost_dev(0, tempbuf) \r\n");
-            s_usbhost_dev(0);
-            break;
-
         }
     }
 

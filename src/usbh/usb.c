@@ -48,6 +48,8 @@
 //#include <command.h>
 //#include <asm/processor.h>
 //#include <linux/ctype.h>
+//#include <string.h>
+//#include "ctype.h"
 #include "usb.h"
 #include "base.h"
 #include "s3c2410.h"
@@ -68,7 +70,7 @@ static int dev_index;
 static int running;
 static int asynch_allowed;
 static struct devrequest setup_packet;
-//extern void hc_interrupt_irq (void);
+extern void hc_interrupt_irq (void);
 /**********************************************************************
  * some forward declerations...
  */
@@ -128,7 +130,7 @@ void TestWaitMs(void)
 int usb_init(void)
 {
     int result;
-    //s_SetIRQHandler(INT_USBH,hc_interrupt_irq );
+    s_SetIRQHandler(INT_USBH, hc_interrupt_irq );
     running=0;
     dev_index=0;
     asynch_allowed=1;
@@ -211,8 +213,8 @@ void *data, unsigned short size, int timeout)
     setup_packet.value = swap_16(value);
     setup_packet.index = swap_16(index);
     setup_packet.length = swap_16(size);
-    APP_DEBUG("usb_control_msg: request: 0x%X, requesttype: 0x%X\r\nvalue 0x%X index 0x%X length 0x%X pipe 0x%X \r\n",
-    request,requesttype,value,index,size,pipe);
+    //APP_DEBUG("usb_control_msg: request: 0x%X, requesttype: 0x%X\r\nvalue 0x%X index 0x%X length 0x%X pipe 0x%X \r\n",
+    //request,requesttype,value,index,size,pipe);
     dev->status=USB_ST_NOT_PROC; /*not yet processed */
     submit_control_msg(dev,pipe,data,size,&setup_packet);
     if(timeout==0) 
@@ -340,7 +342,7 @@ int usb_parse_config(struct usb_device *dev, unsigned char *buffer, int cfgno)
     head =(struct usb_descriptor_header *)&buffer[0];
     if(head->bDescriptorType!=USB_DT_CONFIG) 
     {
-        s_UartPrint(" ERROR: NOT USB_CONFIG_DESC %x\r\n",head->bDescriptorType);
+        APP_ERROR(" ERROR: NOT USB_CONFIG_DESC %x\r\n",head->bDescriptorType);
         return -1;
     }
     memcpy(&dev->config,buffer,buffer[0]);
@@ -554,7 +556,7 @@ int usb_get_report(struct usb_device *dev, int ifnum, unsigned char type, unsign
 {
     return usb_control_msg(dev, usb_rcvctrlpipe(dev, 0),
     USB_REQ_GET_REPORT, USB_DIR_IN | USB_TYPE_CLASS | USB_RECIP_INTERFACE,
-    /*(type << 8) +*/ id, ifnum, buf, size, USB_CNTL_TIMEOUT);
+    (type << 8) + id, ifnum, buf, size, USB_CNTL_TIMEOUT);
 }
 
 
@@ -717,7 +719,7 @@ struct usb_device * usb_alloc_new_device(void)
     APP_DEBUG("New Device %d\r\n", dev_index);
     if(dev_index==USB_MAX_DEVICE) 
     {
-        s_UartPrint("ERROR, too many USB Devices, max=%d\r\n",USB_MAX_DEVICE);
+        APP_ERROR("ERROR, too many USB Devices, max=%d\r\n",USB_MAX_DEVICE);
         return NULL;
     }
     usb_dev[dev_index].devnum=dev_index+1; /* default Address is 0, real addresses start with 1 */
@@ -727,6 +729,54 @@ struct usb_device * usb_alloc_new_device(void)
     usb_dev[dev_index].parent=NULL;
     dev_index++;
     return &usb_dev[dev_index-1];
+}
+
+
+#define MAX_TRIES 5
+static int hub_port_reset(struct usb_device *dev, int port,
+unsigned short *portstat)
+{
+    int tries;
+    struct usb_port_status portsts;
+    unsigned short portstatus, portchange;
+    APP_DEBUG("hub_port_reset: resetting port %d...\r\n", port);
+    for(tries=0;tries<MAX_TRIES;tries++) 
+    {
+        usb_set_port_feature(dev, port + 1, USB_PORT_FEAT_RESET);
+        wait_ms(200);
+        if (usb_get_port_status(dev, port + 1, &portsts)<0) 
+        {
+            APP_ERROR("get_port_status failed status %lX\r\n",dev->status);
+            return -1;
+        }
+        portstatus = swap_16(portsts.wPortStatus);
+        portchange = swap_16(portsts.wPortChange);
+        APP_DEBUG("portstatus %x, change %x, %s\r\n", portstatus ,portchange,
+            (portstatus&(1<<USB_PORT_FEAT_LOWSPEED)) ? "Low Speed" : "High Speed");
+        APP_DEBUG("STAT_C_CONNECTION = %d STAT_CONNECTION = %d  USB_PORT_STAT_ENABLE %d\r\n",
+            (portchange & USB_PORT_STAT_C_CONNECTION) ? 1 : 0,
+            (portstatus & USB_PORT_STAT_CONNECTION) ? 1 : 0,
+            (portstatus & USB_PORT_STAT_ENABLE) ? 1 : 0);
+
+        if ((portchange & USB_PORT_STAT_C_CONNECTION) ||
+        !(portstatus & USB_PORT_STAT_CONNECTION)) {
+            return -1;
+        }
+        if (portstatus & USB_PORT_STAT_ENABLE) 
+        {
+            break;
+        }
+        wait_ms(200);
+    }
+    if (tries==MAX_TRIES) 
+    {
+        APP_ERROR("Cannot enable port %i after %i retries, disabling port.\r\n", port+1, MAX_TRIES);
+        APP_ERROR("Maybe the USB cable is bad?\r\n");
+        return -1;
+    }
+    usb_clear_port_feature(dev, port + 1, USB_PORT_FEAT_C_RESET);
+    *portstat = portstatus;
+    return 0;
 }
 
 
@@ -755,7 +805,9 @@ int usb_new_device(struct usb_device *dev)
     	 * reset of the device. Some equipment is said to work only with such
     	 * init sequence; this patch is based on the work by Alan Stern:
     	 * http://sourceforge.net/mailarchive/forum.php?thread_id=5729457&forum_id=5398
+         * Whoops, we can't find that page. by hxdyxd 190315
     	 */
+    {
     int j;
     struct usb_device_descriptor *desc;
     int port = -1;
@@ -801,7 +853,9 @@ int usb_new_device(struct usb_device *dev)
             return 1;
         }
     }
+    }
     #else
+    APP_DEBUG("and this is the old and known way of initializing devices\r\n");
     /* and this is the old and known way of initializing devices */
     //s_UartPrint("NEW_step 1\r\n");
     err = usb_get_descriptor(dev, USB_DT_DEVICE, 0, &dev->descriptor, 8);
@@ -853,7 +907,7 @@ int usb_new_device(struct usb_device *dev)
     dev->descriptor.idProduct=swap_16(dev->descriptor.idProduct);
     dev->descriptor.bcdDevice=swap_16(dev->descriptor.bcdDevice);
     //s_UartPrint("NEW_step 9 size=%d\r\n",sizeof(dev->descriptor));
-    USB_PRINTF("bLength %x\r\n", dev->descriptor.bLength);
+    /*USB_PRINTF("bLength %x\r\n", dev->descriptor.bLength);
     USB_PRINTF("bDescriptorType      %x\r\n", dev->descriptor.bDescriptorType);
     USB_PRINTF("bcdUSB      %x\r\n", dev->descriptor.bcdUSB);
     USB_PRINTF("bDeviceClass     %x\r\n", dev->descriptor.bDeviceClass);
@@ -866,7 +920,7 @@ int usb_new_device(struct usb_device *dev)
     USB_PRINTF("iManufacturer      %x\r\n", dev->descriptor.iManufacturer);
     USB_PRINTF("iProduct      %x\r\n", dev->descriptor.iProduct);
     USB_PRINTF("iSerialNumber      %x\r\n", dev->descriptor.iSerialNumber);
-    USB_PRINTF("bNumConfigurations      %x\r\n", dev->descriptor.bNumConfigurations);
+    USB_PRINTF("bNumConfigurations      %x\r\n", dev->descriptor.bNumConfigurations);*/
     /* only support for one config for now */
     usb_get_configuration_no(dev,&tmpbuf[0],0);
     //s_UartPrint("NEW_step 10\r\n");
@@ -1013,52 +1067,6 @@ struct usb_hub_device *usb_hub_allocate(void)
     }
     s_UartPrint("ERROR: USB_MAX_HUB (%d) reached\r\n",USB_MAX_HUB);
     return NULL;
-}
-
-
-#define MAX_TRIES 5
-static int hub_port_reset(struct usb_device *dev, int port,
-unsigned short *portstat)
-{
-    int tries;
-    struct usb_port_status portsts;
-    unsigned short portstatus, portchange;
-    USB_HUB_PRINTF("hub_port_reset: resetting port %d...\r\n", port);
-    for(tries=0;tries<MAX_TRIES;tries++) 
-    {
-        usb_set_port_feature(dev, port + 1, USB_PORT_FEAT_RESET);
-        wait_ms(200);
-        if (usb_get_port_status(dev, port + 1, &portsts)<0) 
-        {
-            USB_HUB_PRINTF("get_port_status failed status %lX\r\n",dev->status);
-            return -1;
-        }
-        portstatus = swap_16(portsts.wPortStatus);
-        portchange = swap_16(portsts.wPortChange);
-        USB_HUB_PRINTF("portstatus %x, change %x, %s\r\n", portstatus ,portchange,
-        portstatus&(1<<USB_PORT_FEAT_LOWSPEED) ? "Low Speed" : "High Speed");
-        USB_HUB_PRINTF("STAT_C_CONNECTION = %d STAT_CONNECTION = %d  USB_PORT_STAT_ENABLE %d\r\n",
-        (portchange & USB_PORT_STAT_C_CONNECTION) ? 1 : 0,
-        (portstatus & USB_PORT_STAT_CONNECTION) ? 1 : 0,
-        (portstatus & USB_PORT_STAT_ENABLE) ? 1 : 0);
-        if ((portchange & USB_PORT_STAT_C_CONNECTION) ||
-        !(portstatus & USB_PORT_STAT_CONNECTION))
-        return -1;
-        if (portstatus & USB_PORT_STAT_ENABLE) 
-        {
-            break;
-        }
-        wait_ms(200);
-    }
-    if (tries==MAX_TRIES) 
-    {
-        USB_HUB_PRINTF("Cannot enable port %i after %i retries, disabling port.\r\n", port+1, MAX_TRIES);
-        USB_HUB_PRINTF("Maybe the USB cable is bad?\r\n");
-        return -1;
-    }
-    usb_clear_port_feature(dev, port + 1, USB_PORT_FEAT_C_RESET);
-    *portstat = portstatus;
-    return 0;
 }
 
 

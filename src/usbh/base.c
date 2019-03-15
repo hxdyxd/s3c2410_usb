@@ -144,7 +144,7 @@ void UndefinedHandler(void)
 
 void PrefetchAbortHandler(void)
 {
-    int i;
+    //int i;
     s_Beep();
     //s_LcdInit1();
     // ScrPrint(0,6,1,"Prefetch fail!");
@@ -157,7 +157,7 @@ void PrefetchAbortHandler(void)
 
 void DataAbortHandler(void)
 {
-    int i;
+    //int i;
     s_Beep();
     //s_LcdInit1();
     // ScrPrint(0,6,1,"DataAbort fail!");
@@ -170,7 +170,7 @@ void DataAbortHandler(void)
 
 void AbortHandler(void)
 {
-    int i;
+    //int i;
     s_Beep();
     //s_LcdInit1();
     //ScrPrint(0,6,1,"  Abort failed!");

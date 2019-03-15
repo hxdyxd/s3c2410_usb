@@ -35,9 +35,16 @@
  * 2 - this driver is intended for use with USB Mass Storage Devices
  *     (BBB) ONLY. There is NO support for Interrupt or Isochronous pipes!
  */
+//#include <string.h>
+//#include "ctype.h"
 #include "s3c2410.h"
 #include "usb.h"
 #include "usb_ohci.h"
+
+//by hxdyxd
+#include "app_debug.h"
+
+
 #define OHCI_USE_NPS		/* force NoPowerSwitching mode */
 /* For initializing controller (mask in an HCFS mode too) */
 #define	OHCI_CONTROL_INIT \
@@ -1356,7 +1363,8 @@ int transfer_len, struct devrequest *setup, int interval)
 int submit_bulk_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 int transfer_len)
 {
-    info("submit_bulk_msg\r\n");
+    //info("submit_bulk_msg\r\n");
+    APP_DEBUG("submit_bulk_msg\r\n");
     return submit_common_msg(dev, pipe, buffer, transfer_len, NULL, 0);
 }
 
@@ -1365,7 +1373,7 @@ int submit_control_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 int transfer_len, struct devrequest *setup)
 {
     int maxsize = usb_maxpacket(dev, pipe);
-    info("submit_control_msg");
+    //APP_DEBUG("submit_control_msg\r\n");
     #ifdef DEBUG
     urb_priv.actual_length = 0;
     pkt_print(dev, pipe, buffer, transfer_len, setup, "SUB", usb_pipein(pipe));
@@ -1395,7 +1403,8 @@ int transfer_len, struct devrequest *setup)
 int submit_int_msg(struct usb_device *dev, unsigned long pipe, void *buffer,
 int transfer_len, int interval)
 {
-    info("submit_int_msg");
+    //info("submit_int_msg");
+    APP_DEBUG("submit_int_msg\r\n");
     return -1;
 }
 
@@ -1453,7 +1462,7 @@ static int hc_start (ohci_t * ohci)
 {
     U32 mask;
     unsigned int fminterval;
-    int ints;
+    //int ints;
     ohci->disabled = 1;
     /* Tell the controller where the control and bulk lists are
     	 * The lists are empty now. */
@@ -1517,18 +1526,17 @@ static int hc_interrupt (void)
     else if ((ints = readl (&regs->intrstatus)) == ~(U32)0) 
     {
         ohci->disabled++;
-        err("%s device removed!", ohci->slot_name);
+        //err("%s device removed!", ohci->slot_name);
+        APP_WARN("%s device removed!", ohci->slot_name);
         return -1;
-    } 
+    }
     else if ((ints &= readl (&regs->intrenable)) == 0) 
     {
     	//ohci_dump (ohci, 1);
         //dbg("hc_interrupt: returning..");
         //=============du add 070302
-			#ifdef du_debug
-			s_UartPrint("[%d ISR] &&&&&&&&&&&&&&&&&&&\r\n", __LINE__);
-			#endif
-			//==========================
+        //APP_DEBUG("[ISR] hc_interrupt: returning... \r\n");
+        //==========================
         ints = readl (&ohci->regs->intrstatus);
         err("read intrstatus=%x  %x",ints,rHcInterruptStatus);
         ints = readl (&ohci->regs->intrenable);
@@ -1548,8 +1556,8 @@ static int hc_interrupt (void)
     if (ints & OHCI_INTR_UE) 
     {
         ohci->disabled++;
-        err("OHCI Unrecoverable Error, controller usb-%s disabled ",
-        ohci->slot_name);
+        //err("OHCI Unrecoverable Error, controller usb-%s disabled ", ohci->slot_name);
+        APP_ERROR("OHCI Unrecoverable Error, controller usb-%s disabled ", ohci->slot_name);
         /* e.g. due to PCI Master/Target Abort */
         #ifdef	DEBUG
         ohci_dump (ohci, 1);
@@ -1572,7 +1580,7 @@ static int hc_interrupt (void)
     }
     if (ints & OHCI_INTR_SO) 
     {
-        err("USB Schedule overrun");
+        APP_WARN("USB Schedule overrun");
         writel (OHCI_INTR_SO, &regs->intrenable);
         stat = -1;
     }
@@ -1591,14 +1599,14 @@ static int hc_interrupt (void)
 }
 
 
-/*
+
 void hc_interrupt_irq (void)
 {
 	ohci_t *ohci = &gohci;
 	struct ohci_regs *regs = ohci->regs;
 	int ints;
 	int stat = -1;
-       s_UartPrint("i");
+    s_UartPrint("i");
 	if ((ohci->hcca->done_head != 0) &&
 	     !(m32_swap (ohci->hcca->done_head) & 0x01)) {
 		ints =  OHCI_INTR_WDH;
@@ -1606,7 +1614,7 @@ void hc_interrupt_irq (void)
 	else if ((ints = readl (&regs->intrstatus)) == ~(U32)0) {
 		ohci->disabled++;
 		//err ("%s device removed!", ohci->slot_name);
-		return -1;
+		//return -1;
 	} else if ((ints &= readl (&regs->intrenable)) == 0) {
                //ohci_dump (ohci, 1);
 		//dbg("hc_interrupt: returning..\r\n");
@@ -1619,7 +1627,7 @@ void hc_interrupt_irq (void)
 		//ints = readl (&ohci->regs->cmdstatus);
 		//s_UartPrint("read cmdstatus=%x %x\r\n",ints,rHcCommonStatus);
                s_UartPrint("r");
-		return 0xff;
+		//return 0xff;
 	}
 	//dbg("Interrupt: %x frame: %x", ints, le16_to_cpu (ohci->hcca->frame_no)); 
 	if (ints & OHCI_INTR_RHSC) {
@@ -1641,7 +1649,7 @@ void hc_interrupt_irq (void)
 		// Count and limit the retries though; either hardware or ///
 		// software errors can go forever...///
 		hc_reset (ohci);
-		return -1;
+		//return -1;
 	}
 	if (ints & OHCI_INTR_WDH) {
 		wait_ms(1);
@@ -1670,7 +1678,7 @@ void hc_interrupt_irq (void)
 }
 
 
-*/
+
 /*-------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------*/
 /* De-allocate all resources.. */
