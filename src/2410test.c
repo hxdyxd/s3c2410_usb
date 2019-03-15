@@ -5,7 +5,7 @@
 #include "mmu.h"
 #include "uart.h"
 #include "timer.h"
-#include "rtcapi.h"
+//#include "rtcapi.h"
 #include "cmd_usb.h"
 
 /************************************************************/
