@@ -51,7 +51,10 @@ void Isr_Init(void)
 
 
 
-
+void doDelay10us(unsigned int i) {
+    i *= 20;
+    while(--i);
+}
 
 int Main(void)
 {
@@ -59,17 +62,16 @@ int Main(void)
     char cmd;
     char tempbuf[10][100];
     unsigned char buffer[10000];
-
     
 #if 0           //bank0 modified to RO_START  
     MMU_Init(); //MMU should be reconfigured or turned off for the debugger, 
     //After downloading, MMU should be turned off for the MMU based program,such as WinCE.  
 #else
-    MMU_EnableICache();      
-#endif  
+    MMU_EnableICache();
+#endif
     
-//  ChangeClockDivider(1, 1);    // 1:2:4        
-//  ChangeMPllValue(192, 4, 1);    //FCLK=180.0Mhz                  
+//  ChangeClockDivider(1, 1);    // 1:2:4
+//  ChangeMPllValue(192, 4, 1);    //FCLK=180.0Mhz
     SetClockDivider(1, 1);
     SetSysFclk(DFT_FCLK_VAL);
     Delay( 0 ) ;
@@ -96,7 +98,6 @@ int Main(void)
     puts("*                                 *\r\n");
     puts("*    FS2410 board demo program    *\r\n");
     puts("*    Version: 2.1   2005/10/12    *\r\n");
-    puts("*     Http://www.uCdragon.com     *\r\n");
     puts("*                                 *\r\n");  
     puts("***********************************\r\n");
     ChangeUPllValue(40, 4, 1);  //UCLK=48Mhz   
@@ -109,15 +110,21 @@ int Main(void)
     while(1)
     {
         printf("---------------------\r\n");
-        printf("1-Start  2-Stop   3-Tree \r\n");
-        printf("4-Scan  5-Build-Tree  7-Info   8-Read\r\n");
+        printf("0-(Re)start 1-Start       2-Stop   3-Tree \r\n");
+        printf("4-Scan      5-Build-Tree  7-Info   8-Read\r\n");
         printf("---------------------\r\n");
         
         printf("\r\nPlease Select Function Key:\r\n");
         cmd = s_getkey();
+        //cmd = '1';
+        //doDelay10us(100000);
         s_UartPrint("\r\n");
         switch(cmd)
         {
+        case '0':
+            APP_DEBUG("s_usbhost_reset() \r\n");
+            s_usbhost_reset();
+            break;
         case '1':
             APP_DEBUG("s_usbhost_start() \r\n");
             s_usbhost_start();

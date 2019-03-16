@@ -526,7 +526,10 @@ int s_usbhost_reset(void)
     if (i >= 0) {
         usb_stor_curr_dev = usb_stor_scan(1);
     }
-     
+    if(usb_stor_curr_dev < 0) {
+        APP_WARN("No USB Storage Device(s) found!!!\r\n");
+        return -1;
+    }
     return 0;
 }
 
@@ -544,6 +547,10 @@ int s_usbhost_start(void)
     /* try to recognize storage devices immediately */
     if (i >= 0) {
         usb_stor_curr_dev = usb_stor_scan(1);
+    }
+    if(usb_stor_curr_dev < 0) {
+        APP_WARN("\033[40;31m No USB Storage Device(s) found!!! \033[0m\r\n");
+        return -1;
     }
     return 0;
 }

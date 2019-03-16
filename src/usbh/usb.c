@@ -331,7 +331,7 @@ int usb_set_maxpacket(struct usb_device *dev)
                 /* Control => bidirectional */
                 dev->epmaxpacketout[b] = ep->wMaxPacketSize;
                 dev->epmaxpacketin [b] = ep->wMaxPacketSize;
-                USB_PRINTF("##Control EP epmaxpacketout/in[%d] = %d\r\n",b,dev->epmaxpacketin[b]);
+                APP_DEBUG("##Control EP epmaxpacketout/in[%d] = %d\r\n",b,dev->epmaxpacketin[b]);
             }
             else 
             {
@@ -341,7 +341,7 @@ int usb_set_maxpacket(struct usb_device *dev)
                     if(ep->wMaxPacketSize > dev->epmaxpacketout[b]) 
                     {
                         dev->epmaxpacketout[b] = ep->wMaxPacketSize;
-                        USB_PRINTF("##EP epmaxpacketout[%d] = %d\r\n",b,dev->epmaxpacketout[b]);
+                        APP_DEBUG("##EP epmaxpacketout[%d] = %d\r\n",b,dev->epmaxpacketout[b]);
                     }
                 }
                 else  
@@ -350,7 +350,7 @@ int usb_set_maxpacket(struct usb_device *dev)
                     if(ep->wMaxPacketSize > dev->epmaxpacketin[b]) 
                     {
                         dev->epmaxpacketin[b] = ep->wMaxPacketSize;
-                        USB_PRINTF("##EP epmaxpacketin[%d] = %d\r\n",b,dev->epmaxpacketin[b]);
+                        APP_DEBUG("##EP epmaxpacketin[%d] = %d\r\n",b,dev->epmaxpacketin[b]);
                     }
                 } 
                 /* if out */
@@ -407,7 +407,7 @@ int usb_parse_config(struct usb_device *dev, unsigned char *buffer, int cfgno)
         default:
             if(head->bLength==0)
             return 1;
-            USB_PRINTF("unknown Description Type : %x\r\n",head->bDescriptorType);
+            APP_ERROR("unknown Description Type : %x\r\n",head->bDescriptorType);
             {
                 int i;
                 unsigned char *ch;
@@ -476,21 +476,22 @@ int usb_get_configuration_no(struct usb_device *dev,unsigned char *buffer,int cf
     result = usb_get_descriptor(dev, USB_DT_CONFIG, cfgno, buffer, 8);
     if (result < 8) 
     {
-        if (result < 0)
-        s_UartPrint("unable to get descriptor, error %lX\r\n",dev->status);
-        else
-        s_UartPrint("config descriptor too short (expected %i, got %i)\r\n",8,result);
+        if (result < 0) {
+            APP_ERROR("unable to get descriptor, error %lX\r\n",dev->status);
+        } else {
+            APP_ERROR("config descriptor too short (expected %i, got %i)\r\n",8,result);
+        }
         return -1;
     }
     tmp=swap_16(config->wTotalLength);
     if (tmp > USB_BUFSIZ) 
     {
-        USB_PRINTF("usb_get_configuration_no: failed to get descriptor - too long: %d\r\n",
+        APP_ERROR("usb_get_configuration_no: failed to get descriptor - too long: %d\r\n",
         tmp);
         return -1;
     }
     result = usb_get_descriptor(dev, USB_DT_CONFIG, cfgno, buffer, tmp);
-    USB_PRINTF("get_conf_no %d Result %d, wLength %d\r\n",cfgno,result,tmp);
+    APP_DEBUG("get_conf_no %d Result %d, wLength %d\r\n",cfgno,result,tmp);
     return result;
 }
 
@@ -966,10 +967,10 @@ int usb_new_device(struct usb_device *dev)
     /* we set the default configuration here */
     if (usb_set_configuration(dev, dev->config.bConfigurationValue)) 
     {
-        s_UartPrint("failed to set default configuration len %d, status %lX\r\n",dev->act_len,dev->status);
+        APP_ERROR("failed to set default configuration len %d, status %lX\r\n",dev->act_len,dev->status);
         return -1;
     }
-    USB_PRINTF("new device strings: Mfr=%d, Product=%d, SerialNumber=%d\r\n",
+    APP_DEBUG("new device strings: Mfr=%d, Product=%d, SerialNumber=%d\r\n",
     dev->descriptor.iManufacturer, dev->descriptor.iProduct, dev->descriptor.iSerialNumber);
     memset(dev->mf, 0, sizeof(dev->mf));
     memset(dev->prod, 0, sizeof(dev->prod));
@@ -980,9 +981,11 @@ int usb_new_device(struct usb_device *dev)
     usb_string(dev, dev->descriptor.iProduct, dev->prod, sizeof(dev->prod));
     if (dev->descriptor.iSerialNumber)
     usb_string(dev, dev->descriptor.iSerialNumber, dev->serial, sizeof(dev->serial));
-    USB_PRINTF("Manufacturer %s\r\n", dev->mf);
-    USB_PRINTF("Product      %s\r\n", dev->prod);
-    USB_PRINTF("SerialNumber %s\r\n", dev->serial);
+    PRINTF("*****************************************************\r\n");
+    PRINTF("Manufacturer %s\r\n", dev->mf);
+    PRINTF("Product      %s\r\n", dev->prod);
+    PRINTF("SerialNumber %s\r\n", dev->serial);
+    PRINTF("*****************************************************\r\n");
     /* now prode if the device is a hub */
     usb_hub_probe(dev,0);
     return 0;

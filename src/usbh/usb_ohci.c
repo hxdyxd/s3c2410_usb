@@ -1417,7 +1417,7 @@ static int hc_reset (ohci_t *ohci)
 {
     int timeout = 30;
     int smm_timeout = 50; /* 0,5 sec */
-    APP_WARN("OHCI_CTRL_IR\r\n");
+    APP_WARN("OHCI_CTRL_IR %p\r\n", &(ohci->regs->control) );
     if (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
     {
         /* SMM owns the HC */
@@ -1838,94 +1838,94 @@ int usb_lowlevel_init_22(void)
 
     hc_reset (&gohci);
  
-    /*
-     * Set the 48 MHz UPLL clocking. Values are taken from
-     * "PLL value selection guide", 6-23, s3c2410_UM.pdf.
-     */
-    //s_UartPrint("\r\n &(clk_power->CLKSLOW)=%0x\r\n",&(clk_power->CLKSLOW));
-    //s_UartPrint("\r\n CLKSLOW=%0x\r\n",clk_power->CLKSLOW);
-    
-    clk_power->CLKSLOW |= UCLK_ON ; 
-    APP_WARN(" addr: UPLLCON=%0x\r\n", &(clk_power->UPLLCON));
-    APP_WARN(" val: UPLLCON=%0x\r\n", clk_power->UPLLCON);
-    APP_WARN(" addr: MPLLCON=%0x\r\n", &(clk_power->MPLLCON));
-    APP_WARN(" val: MPLLCON=%0x\r\n", clk_power->MPLLCON);
-
-    //clk_power->UPLLCON = 0x78023;    //((0x78 << 12) + (2 << 4) + 3);
-    //upllvalue = 0x78023;//(0x78<<12)|(0x02<<4)|(0x03); 
-    //clk_power->UPLLCON=0x38021;
-    //upllvalue = 0x38021;
-    upllvalue = 0x28041;
-    while (upllvalue != clk_power->UPLLCON) 
-    {
-        APP_WARN(" set UPLLCON(%0x)=%0x\r\n", clk_power->UPLLCON, upllvalue);
-        //s_getkey();
-
-        clk_power->UPLLCON = upllvalue;//0x78023;//((0x78 << 12) + (2 << 4) + 3);     
-        wait_ms(1);
-    }
-    
-    //gpio->MISCCR |= MISCCR_USBPAD; // 1 = use pads related USB for USB host //
-    gpio->MISCCR &= ~MISCCR_USBPAD;//DP0DN0=HOST DP1DN1=DEVICE
-    gpio->MISCCR &= ~(MISCCR_USB0_SUSPEND|MISCCR_USB1_SUSPEND); // 1 = use pads related USB for USB host 
-    //上面使能USB0 USB1,USB0是 USB host，USB1是USB Device
-
-    clk_power->CLKSLOW &= ~(UCLK_ON | MPLL_OFF | SLOW_BIT); 
+//    /*
+//     * Set the 48 MHz UPLL clocking. Values are taken from
+//     * "PLL value selection guide", 6-23, s3c2410_UM.pdf.
+//     */
+//    //s_UartPrint("\r\n &(clk_power->CLKSLOW)=%0x\r\n",&(clk_power->CLKSLOW));
+//    //s_UartPrint("\r\n CLKSLOW=%0x\r\n",clk_power->CLKSLOW);
+//    
+//    clk_power->CLKSLOW |= UCLK_ON ; 
+//    APP_WARN(" addr: UPLLCON=%0x\r\n", &(clk_power->UPLLCON));
+//    APP_WARN(" val: UPLLCON=%0x\r\n", clk_power->UPLLCON);
+//    APP_WARN(" addr: MPLLCON=%0x\r\n", &(clk_power->MPLLCON));
+//    APP_WARN(" val: MPLLCON=%0x\r\n", clk_power->MPLLCON);
+//
+//    //clk_power->UPLLCON = 0x78023;    //((0x78 << 12) + (2 << 4) + 3);
+//    //upllvalue = 0x78023;//(0x78<<12)|(0x02<<4)|(0x03); 
+//    //clk_power->UPLLCON=0x38021;
+//    //upllvalue = 0x38021;
+//    upllvalue = 0x28041;
+//    while (upllvalue != clk_power->UPLLCON) 
+//    {
+//        APP_WARN(" set UPLLCON(%0x)=%0x\r\n", clk_power->UPLLCON, upllvalue);
+//        //s_getkey();
+//
+//        clk_power->UPLLCON = upllvalue;//0x78023;//((0x78 << 12) + (2 << 4) + 3);     
+//        wait_ms(1);
+//    }
+//    
+//    //gpio->MISCCR |= MISCCR_USBPAD; // 1 = use pads related USB for USB host //
+//    gpio->MISCCR &= ~MISCCR_USBPAD;//DP0DN0=HOST DP1DN1=DEVICE
+//    gpio->MISCCR &= ~(MISCCR_USB0_SUSPEND|MISCCR_USB1_SUSPEND); // 1 = use pads related USB for USB host 
+//    //上面使能USB0 USB1,USB0是 USB host，USB1是USB Device
+//
+//    clk_power->CLKSLOW &= ~(UCLK_ON | MPLL_OFF | SLOW_BIT); 
 
     //clk_power->CLKSLOW &= ~UCLK_ON; 
     // Enable USB host clock.
     //clk_power->CLKCON |= CLKCON_USBH;//change by wqh 有问题，下面不能进行
-    APP_WARN("CLKCON=%0x\r\n", clk_power->CLKCON);
-    memset (&gohci, 0, sizeof (ohci_t));
-    memset (&urb_priv, 0, sizeof (urb_priv_t));
-
-    /* align the storage */
-    //不懂,为啥跟地址有关
-
-    if ((U32)&ghcca[0] & 0xff) 
-    {
-        APP_ERROR("HCCA not aligned!!\r\n");
-        return -1;
-    }
-
-    phcca = &ghcca[0];
-    APP_WARN("aligned ghcca %p\r\n", phcca);
-    //err("\r\n aligned ghcca %p \r\n", phcca);//aligned ghcca 301503e4
-    memset(&ohci_dev, 0, sizeof(struct ohci_device));
-
-    if ((U32)&ohci_dev.ed[0] & 0x7) 
-    {
-        APP_ERROR("EDs not aligned!! \r\n");
-        return -1;
-    }
-
-    memset(gtd, 0, sizeof(td_t) * (NUM_TD + 1));
-
-    if ((U32)gtd & 0x7) 
-    {
-        APP_ERROR("TDs not aligned!! \r\n");
-        return -1;
-    }
-
-    ptd = gtd;
-    gohci.hcca = phcca;
-    memset (phcca, 0, sizeof (struct ohci_hcca));
-    gohci.disabled = 1;
-    gohci.sleeping = 0;
-    gohci.irq = -1;
-    gohci.regs = (struct ohci_regs *)S3C24X0_USB_HOST_BASE;
-    gohci.flags = 0;
-    gohci.slot_name = "s3c2410";
-    APP_WARN("hc_reset\r\n");
-    if (hc_reset (&gohci) < 0) 
-    {
-        hc_release_ohci (&gohci);
-        /* Initialization failed */
-        APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
-        //clk_power->CLKCON &= ~CLKCON_USBH;
-        APP_WARN("disable CLKCON_USBH success\r\n");
-        return -1;
-    }
+//    APP_WARN("CLKCON=%0x\r\n", clk_power->CLKCON);
+//    memset (&gohci, 0, sizeof (ohci_t));
+//    memset (&urb_priv, 0, sizeof (urb_priv_t));
+//
+//    /* align the storage */
+//    //不懂,为啥跟地址有关
+//
+//    if ((U32)&ghcca[0] & 0xff) 
+//    {
+//        APP_ERROR("HCCA not aligned!!\r\n");
+//        return -1;
+//    }
+//
+//    phcca = &ghcca[0];
+//    APP_WARN("aligned ghcca %p\r\n", phcca);
+//    //err("\r\n aligned ghcca %p \r\n", phcca);//aligned ghcca 301503e4
+//    memset(&ohci_dev, 0, sizeof(struct ohci_device));
+//
+//    if ((U32)&ohci_dev.ed[0] & 0x7) 
+//    {
+//        APP_ERROR("EDs not aligned!! \r\n");
+//        return -1;
+//    }
+//
+//    memset(gtd, 0, sizeof(td_t) * (NUM_TD + 1));
+//
+//    if ((U32)gtd & 0x7) 
+//    {
+//        APP_ERROR("TDs not aligned!! \r\n");
+//        return -1;
+//    }
+//
+//    ptd = gtd;
+//    gohci.hcca = phcca;
+//    memset (phcca, 0, sizeof (struct ohci_hcca));
+//    gohci.disabled = 1;
+//    gohci.sleeping = 0;
+//    gohci.irq = -1;
+//    gohci.regs = (struct ohci_regs *)S3C24X0_USB_HOST_BASE;
+//    gohci.flags = 0;
+//    gohci.slot_name = "s3c2410";
+//    APP_WARN("hc_reset\r\n");
+//    if (hc_reset (&gohci) < 0) 
+//    {
+//        hc_release_ohci (&gohci);
+//        /* Initialization failed */
+//        APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
+//        //clk_power->CLKCON &= ~CLKCON_USBH;
+//        APP_WARN("disable CLKCON_USBH success\r\n");
+//        return -1;
+//    }
     /* FIXME this is a second HC reset; why?? */
     writel (gohci.hc_control = OHCI_USB_RESET, &gohci.regs->control);
     wait_ms (10);
