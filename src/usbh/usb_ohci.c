@@ -1418,22 +1418,22 @@ static int hc_reset (ohci_t *ohci)
     int timeout = 30;
     int smm_timeout = 50; /* 0,5 sec */
     APP_WARN("OHCI_CTRL_IR %p\r\n", &(ohci->regs->control) );
-    if (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
-    {
-        /* SMM owns the HC */
-        APP_WARN("OHCI_OCR\r\n");
-        writel (OHCI_OCR, &ohci->regs->cmdstatus); /* request ownership */
-        APP_WARN("USB HC TakeOver from SMM\r\n");
-        while (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
-        {
-            wait_ms (10);
-            if (--smm_timeout == 0) 
-            {
-                APP_ERROR("USB HC TakeOver failed!\r\n");
-                return -1;
-            }
-        }
-    }
+    // if (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
+    // {
+    //     /* SMM owns the HC */
+    //     APP_WARN("OHCI_OCR\r\n");
+    //     writel (OHCI_OCR, &ohci->regs->cmdstatus); /* request ownership */
+    //     APP_WARN("USB HC TakeOver from SMM\r\n");
+    //     while (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
+    //     {
+    //         wait_ms (10);
+    //         if (--smm_timeout == 0) 
+    //         {
+    //             APP_ERROR("USB HC TakeOver failed!\r\n");
+    //             return -1;
+    //         }
+    //     }
+    // }
     APP_WARN("OHCI_INTR_MIE\r\n");
     /* Disable HC interrupts */
     writel (OHCI_INTR_MIE, &ohci->regs->intrdisable);
@@ -1542,7 +1542,7 @@ static int hc_interrupt (void)
         //ohci_dump (ohci, 1);
         //dbg("hc_interrupt: returning..");
         //=============du add 070302
-        //APP_DEBUG("[ISR] hc_interrupt: returning... \r\n");
+        APP_DEBUG("[ISR] hc_interrupt: returning... \r\n");
         //==========================
         ints = readl (&ohci->regs->intrstatus);
         err("read intrstatus=%x  %x",ints,rHcInterruptStatus);
@@ -1718,10 +1718,10 @@ int usb_lowlevel_init(void)
     //s_UartPrint("\r\n CLKSLOW=%0x\r\n",clk_power->CLKSLOW);
     
     clk_power->CLKSLOW |= UCLK_ON ; 
-    APP_WARN(" addr: UPLLCON=%0x\r\n", &(clk_power->UPLLCON));
-    APP_WARN(" val: UPLLCON=%0x\r\n", clk_power->UPLLCON);
-    APP_WARN(" addr: MPLLCON=%0x\r\n", &(clk_power->MPLLCON));
-    APP_WARN(" val: MPLLCON=%0x\r\n", clk_power->MPLLCON);
+    APP_DEBUG(" addr: UPLLCON=%0x\r\n", &(clk_power->UPLLCON));
+    APP_DEBUG(" val: UPLLCON=%0x\r\n", clk_power->UPLLCON);
+    APP_DEBUG(" addr: MPLLCON=%0x\r\n", &(clk_power->MPLLCON));
+    APP_DEBUG(" val: MPLLCON=%0x\r\n", clk_power->MPLLCON);
 
     //clk_power->UPLLCON = 0x78023;    //((0x78 << 12) + (2 << 4) + 3);
     //upllvalue = 0x78023;//(0x78<<12)|(0x02<<4)|(0x03); 
@@ -1730,7 +1730,7 @@ int usb_lowlevel_init(void)
     upllvalue = 0x28041;
     while (upllvalue != clk_power->UPLLCON) 
     {
-        APP_WARN(" set UPLLCON(%0x)=%0x\r\n", clk_power->UPLLCON, upllvalue);
+        APP_DEBUG(" set UPLLCON(%0x)=%0x\r\n", clk_power->UPLLCON, upllvalue);
         //s_getkey();
 
         clk_power->UPLLCON = upllvalue;//0x78023;//((0x78 << 12) + (2 << 4) + 3);     
@@ -1747,7 +1747,7 @@ int usb_lowlevel_init(void)
     //clk_power->CLKSLOW &= ~UCLK_ON; 
     // Enable USB host clock.
     //clk_power->CLKCON |= CLKCON_USBH;//change by wqh 有问题，下面不能进行
-    APP_WARN("CLKCON=%0x\r\n", clk_power->CLKCON);
+    APP_DEBUG("CLKCON=%0x\r\n", clk_power->CLKCON);
     memset (&gohci, 0, sizeof (ohci_t));
     memset (&urb_priv, 0, sizeof (urb_priv_t));
 
@@ -1761,7 +1761,7 @@ int usb_lowlevel_init(void)
     }
 
     phcca = &ghcca[0];
-    APP_WARN("aligned ghcca %p\r\n", phcca);
+    APP_DEBUG("aligned ghcca %p\r\n", phcca);
     //err("\r\n aligned ghcca %p \r\n", phcca);//aligned ghcca 301503e4
     memset(&ohci_dev, 0, sizeof(struct ohci_device));
 
@@ -1788,29 +1788,29 @@ int usb_lowlevel_init(void)
     gohci.regs = (struct ohci_regs *)S3C24X0_USB_HOST_BASE;
     gohci.flags = 0;
     gohci.slot_name = "s3c2410";
-    APP_WARN("hc_reset\r\n");
+    APP_DEBUG("hc_reset\r\n");
     if (hc_reset (&gohci) < 0) 
     {
         APP_ERROR("can't start usb \r\n");
         hc_release_ohci (&gohci);
         /* Initialization failed */
-        APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
+        APP_DEBUG("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
         //clk_power->CLKCON &= ~CLKCON_USBH;
-        APP_WARN("disable CLKCON_USBH success\r\n");
+        APP_DEBUG("disable CLKCON_USBH success\r\n");
         return -1;
     }
     /* FIXME this is a second HC reset; why?? */
     writel (gohci.hc_control = OHCI_USB_RESET, &gohci.regs->control);
     wait_ms (10);
-    APP_WARN("hc_start\r\n");
+    APP_DEBUG("hc_start\r\n");
     if (hc_start (&gohci) < 0) 
     {
         APP_ERROR("can't start usb-%s \r\n", gohci.slot_name);
         hc_release_ohci (&gohci);
         /* Initialization failed */
-        APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
+        APP_DEBUG("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
         //clk_power->CLKCON &= ~CLKCON_USBH;
-        APP_WARN("disable CLKCON_USBH success\r\n");
+        APP_DEBUG("disable CLKCON_USBH success\r\n");
         return -1;
     }
     
@@ -1957,7 +1957,7 @@ int usb_lowlevel_stop(void)
 {
     S3C24X0_CLOCK_POWER * const clk_power = S3C24X0_GetBase_CLOCK_POWER();
     #ifdef du_debug
-    APP_WARN(" usb_lowlevel_stop\r\n");
+    APP_DEBUG(" usb_lowlevel_stop\r\n");
     #endif
     /* this gets called really early - before the controller has */
     /* even been initialized! */
@@ -1965,11 +1965,11 @@ int usb_lowlevel_stop(void)
         return 0;
     /* TODO release any interrupts, etc. */
     /* call hc_release_ohci() here ? */
-    APP_WARN("hc_reset\r\n");
+    APP_DEBUG("hc_reset\r\n");
     hc_reset (&gohci);
-    APP_WARN("disable CLKCON_USBH(%p) = %08x\r\n", &(clk_power->CLKCON), (clk_power->CLKCON));
+    APP_DEBUG("disable CLKCON_USBH(%p) = %08x\r\n", &(clk_power->CLKCON), (clk_power->CLKCON));
     /* may not want to do this */
     //clk_power->CLKCON &= ~CLKCON_USBH;//change by wqh 
-    APP_WARN("disable CLKCON_USBH success\r\n");
+    APP_DEBUG("disable CLKCON_USBH success\r\n");
     return 0;
 }

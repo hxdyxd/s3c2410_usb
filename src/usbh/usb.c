@@ -141,7 +141,7 @@ int usb_init(void)
     if(result==0) 
     {
         running=1;
-        APP_WARN("usb_scan_devices()\r\n");
+        APP_DEBUG("usb_scan_devices()\r\n");
         if(usb_scan_devices() != 0) {
             APP_ERROR("usb_scan_devices() FAILED\r\n");
             return -1;
@@ -150,7 +150,7 @@ int usb_init(void)
     }
     else 
     {
-        s_UartPrint("Error, couldn't init Lowlevel part\r\n");
+        APP_ERROR("Error, couldn't init Lowlevel part\r\n");
         return -1;
     }
 }
@@ -402,7 +402,7 @@ int usb_parse_config(struct usb_device *dev, unsigned char *buffer, int cfgno)
             memcpy(&dev->config.if_desc[ifno].ep_desc[epno],&buffer[index],buffer[index]);
             dev->config.if_desc[ifno].ep_desc[epno].wMaxPacketSize
             =swap_16(dev->config.if_desc[ifno].ep_desc[epno].wMaxPacketSize);
-            USB_PRINTF("if %d, ep %d\r\n",ifno,epno);
+            APP_DEBUG("if %d, ep %d\r\n", ifno, epno);
             break;
         default:
             if(head->bLength==0)
@@ -860,7 +860,7 @@ int usb_new_device(struct usb_device *dev)
         err = usb_get_descriptor(dev, USB_DT_DEVICE, 0, desc, 64);
         if (err < 0) 
         {
-            USB_PRINTF("usb_new_device: 64 byte descr\r\n");
+            APP_DEBUG("usb_new_device: 64 byte descr\r\n");
             break;
         }
     }
@@ -878,14 +878,14 @@ int usb_new_device(struct usb_device *dev)
         }
         if (port < 0) 
         {
-            s_UartPrint("usb_new_device: cannot locate device's port..\r\n");
+            APP_ERROR("usb_new_device: cannot locate device's port..\r\n");
             return 1;
         }
         /* reset the port for the second time */
         err = hub_port_reset(dev->parent, port, &portstatus);
         if (err < 0) 
         {
-            s_UartPrint("\r\n     Couldn't reset port %i\r\n", port);
+            APP_ERROR("\r\n     Couldn't reset port %i\r\n", port);
             return 1;
         }
     }
@@ -932,7 +932,7 @@ int usb_new_device(struct usb_device *dev)
         } else {
             APP_ERROR("USB device descriptor short read (expected %i, got %i)\r\n",tmp,err);
         }
-        s_UartPrint("NEW_step 8\r\n");
+        APP_ERROR("NEW_step 8\r\n");
         return 1;
     }
     //dev->epmaxpacketin [0] = dev->descriptor.bMaxPacketSize0;
@@ -1007,8 +1007,8 @@ int usb_scan_devices(void)
     /* device 0 is always present (root hub, so let it analyze) */
     //s_UartPrint("scan_step 1\r\n");
     dev=usb_alloc_new_device();
-    s_UartPrint("scan_step 2\r\n");
-	s_UartPrint("dev=%d",dev);
+    APP_DEBUG("scan_step 2\r\n");
+	APP_DEBUG("dev=%d",dev);
     return usb_new_device(dev);
     //s_UartPrint("scan_step 3\r\n");
     //s_UartPrint("%d USB Device(s) found\r\n",dev_index);

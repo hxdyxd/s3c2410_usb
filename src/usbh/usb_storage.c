@@ -229,7 +229,7 @@ int usb_stor_scan(int mode)
     for(i=0;i<USB_MAX_DEVICE;i++) 
     {
         dev=usb_get_dev_index(i); /* get device */
-        USB_STOR_PRINTF("i=%d\r\n",i);
+        APP_DEBUG("i=%d\r\n", i);
         if(dev==NULL) 
         {
             break; /* no more devices avaiable */
@@ -1203,7 +1203,7 @@ int usb_stor_get_info(struct usb_device *dev,struct us_data *ss,block_dev_desc_t
     APP_DEBUG("ISO Vers %X, Response Data %X\r\n",usb_stor_buf[2],usb_stor_buf[3]);
     if(usb_test_unit_ready(pccb,ss)) 
     {
-        USB_STOR_PRINTF("Device NOT ready\r\n   Request Sense returned %02X %02X %02X\r\n",pccb->sense_buf[2],pccb->sense_buf[12],pccb->sense_buf[13]);
+        APP_ERROR("Device NOT ready\r\n   Request Sense returned %02X %02X %02X\r\n",pccb->sense_buf[2],pccb->sense_buf[12],pccb->sense_buf[13]);
         if(dev_desc->removable == 1) 
         {
             dev_desc->type = perq;
@@ -1216,11 +1216,11 @@ int usb_stor_get_info(struct usb_device *dev,struct us_data *ss,block_dev_desc_t
     memset(pccb->pdata,0,8);
     if(usb_read_capacity(pccb,ss) != 0) 
     {
-        USB_STOR_PRINTF("READ_CAP ERROR\r\n");
+        APP_ERROR("READ_CAP ERROR\r\n");
         cap[0] = 2880;
         cap[1] = 0x200;
     }
-    USB_STOR_PRINTF("Read Capacity returns: 0x%lx, 0x%lx\r\n",cap[0],cap[1]);
+    PRINTF("Read Capacity returns: 0x%lx, 0x%lx\r\n",cap[0],cap[1]);
     cap[0] = ((unsigned long)(
     (((unsigned long)(cap[0]) & (unsigned long)0x000000ffUL) << 24) |
     (((unsigned long)(cap[0]) & (unsigned long)0x0000ff00UL) <<  8) |
@@ -1235,15 +1235,13 @@ int usb_stor_get_info(struct usb_device *dev,struct us_data *ss,block_dev_desc_t
     cap[0] += 1;
     capacity = &cap[0];
     blksz = &cap[1];
-    USB_STOR_PRINTF("Capacity = 0x%lx, blocksz = 0x%lx\r\n",*capacity,*blksz);
+    PRINTF("Capacity = 0x%lx, blocksz = 0x%lx\r\n", *capacity, *blksz);
     dev_desc->lba = *capacity;
     dev_desc->blksz = *blksz;
     dev_desc->type = perq;
-    USB_STOR_PRINTF(" address %d\r\n",dev_desc->target);
-    USB_STOR_PRINTF("partype: %d\r\n",dev_desc->part_type);
+    APP_DEBUG(" address %d\r\n",dev_desc->target);
+    APP_DEBUG("partype: %d\r\n",dev_desc->part_type);
     //init_part(dev_desc);
-    USB_STOR_PRINTF("partype: %d\r\n",dev_desc->part_type);
+    APP_DEBUG("partype: %d\r\n",dev_desc->part_type);
     return 1;
 }
-
-

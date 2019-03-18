@@ -51,16 +51,8 @@ void Isr_Init(void)
 
 
 
-void doDelay10us(unsigned int i) {
-    i *= 20;
-    while(--i);
-}
-
 int Main(void)
 {
-    int j = 0;
-    char cmd;
-    char tempbuf[10][100];
     unsigned char buffer[10000];
     
 #if 0           //bank0 modified to RO_START  
@@ -70,8 +62,6 @@ int Main(void)
     MMU_EnableICache();
 #endif
     
-//  ChangeClockDivider(1, 1);    // 1:2:4
-//  ChangeMPllValue(192, 4, 1);    //FCLK=180.0Mhz
     SetClockDivider(1, 1);
     SetSysFclk(DFT_FCLK_VAL);
     Delay( 0 ) ;
@@ -81,84 +71,50 @@ int Main(void)
     
     Uart_Select(0);
     Uart_Init(0, UART_BAUD);
-    
-    //RequestBiosTimerEvent(10, Led1Flash); //when request, auto open bios timer
-    //RequestBiosTimerEvent(20, Led2Flash);
-    //RequestBiosTimerEvent(50, Led3Flash);
-    
-    //RequestBiosTimerEvent(100, Led4Flash);
-        
-    //GPIO,UART0,PWM TIMER,NAND FLASH
-//  DisableModuleClock(CLOCK_ALL);
+
     EnableModuleClock(CLOCK_UART0|CLOCK_TIMER|CLOCK_GPIO|CLOCK_NAND|CLOCK_LCD);
 
 
     putch('\r\n');
     puts("***********************************\r\n");
-    puts("*                                 *\r\n");
     puts("*    FS2410 board demo program    *\r\n");
-    puts("*    Version: 2.1   2005/10/12    *\r\n");
-    puts("*                                 *\r\n");  
+    puts("*    Version: 2.1   2005/10/12    *\r\n"); 
     puts("***********************************\r\n");
-    ChangeUPllValue(40, 4, 1);  //UCLK=48Mhz   
-    s_usbhost_reset();
-    
-    
+    ChangeUPllValue(40, 4, 1);  //UCLK=48Mhz
+
     APP_DEBUG("Usb Host Example!\r\n");
-    
     
     while(1)
     {
-        printf("---------------------\r\n");
-        printf("0-(Re)start 1-Start       2-Stop   3-Tree \r\n");
-        printf("4-Scan      5-Build-Tree  7-Info   8-Read\r\n");
-        printf("---------------------\r\n");
-        
-        printf("\r\nPlease Select Function Key:\r\n");
-        cmd = s_getkey();
-        //cmd = '1';
-        //doDelay10us(100000);
-        s_UartPrint("\r\n");
-        switch(cmd)
-        {
-        case '0':
-            APP_DEBUG("s_usbhost_reset() \r\n");
-            s_usbhost_reset();
-            break;
-        case '1':
-            APP_DEBUG("s_usbhost_start() \r\n");
-            s_usbhost_start();
-            break;
-        case '2':
-            APP_DEBUG("s_usbhost_stop() \r\n");
-            s_usbhost_stop();
-            break;
-        case '3':
-            APP_DEBUG("s_usbhost_tree() \r\n");
-            s_usbhost_tree();
-            break;
-        case '4':
-            APP_DEBUG("s_usbhost_scan() \r\n");
-            s_usbhost_scan();
-            break;
-        case '5':
-            APP_DEBUG("usb_scan_devices() \r\n");
-            usb_scan_devices();
-            break;
-        case '7':
-            APP_DEBUG("s_usbhost_info(2, tempbuf) \r\n");
-            s_usbhost_info(2, (char **)tempbuf);
-            break;
-        case '8':
-            APP_DEBUG("s_usbhost_read(0, 0, 1, buffer) \r\n");
-            s_usbhost_read(0, 0, 1, buffer);
+        APP_WARN("s_getkey() \r\n");
+        if(0) {
+            s_getkey();
+        } else {
+            delay: {
+                int i = 10000000;
+                while(--i);
+            }
+        }
+
+        APP_WARN("s_usbhost_reset() \r\n");
+        if(s_usbhost_reset() < 0) {
+            APP_WARN("No USB Storage Device(s) found!!!\r\n");
+            continue;
+        }
+
+        APP_WARN("s_usbhost_read(0, 0, 1, buffer) \r\n");
+        if(s_usbhost_read(0, 0, 1, buffer) < 0) {
+            APP_WARN("Read Failed!!!\r\n");
+            continue;
+        }
+
+        if(1) {
+            int j;
             for(j = 0; j < 0x200; j++)
             {
                 printf("%02X ", buffer[j]);
             }
             printf("\r\n");
-
-            break;
         }
     }
 
