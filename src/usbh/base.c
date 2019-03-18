@@ -89,7 +89,7 @@ void __gccmain()
 
 void s_UartSend( unsigned char ch)
 {
-    rUTXH0 = ch;    
+    rUTXH0 = ch;
     while(!(rUTRSTAT0 & 0x04));
 }
 

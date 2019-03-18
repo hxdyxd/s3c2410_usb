@@ -169,8 +169,7 @@ struct ohci_regs
         U32	portstatus[MAX_ROOT_PORTS];
     } 
     roothub;
-} 
-/*__attribute((aligned(32)))*/;
+} /*__attribute((aligned(32)))*/;
 /* OHCI CONTROL AND STATUS REGISTER MASKS */
 /*
  * HcControl (control) register masks

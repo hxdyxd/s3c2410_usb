@@ -13,7 +13,7 @@
 #define WHITE_FONT "\033[40;37m%s\033[0m "
 
 
-#define TIME_COUNT()  (0)
+#define TIME_COUNT()  (1)
 #define __FUNCTION__   __FILE__
 
 #define PRINTF(...) s_UartPrint(__VA_ARGS__);
@@ -33,11 +33,11 @@
 #define APP_DEBUG(...) if(0) {\
 					s_UartPrint("\033[40;32m[%d]\033[0m \033[2;40;33m%s(%d)\033[0m: ",\
 					 TIME_COUNT(), __FUNCTION__, __LINE__);\
-                    s_UartPrint(__VA_ARGS__);} else {\
-                    int i=10000;while(--i);}
+                    s_UartPrint(__VA_ARGS__);}
 
 
-
+#define APP_DELAY(...) //s_UartPrint(__VA_ARGS__);\
+                    if(1) {int i=10000;while(--i);}
 
 
 #endif

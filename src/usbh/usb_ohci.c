@@ -1312,9 +1312,7 @@ int transfer_len, struct devrequest *setup, int interval)
         {
             stat = USB_ST_CRC_ERR;
             //=============du add 070302
-            #ifdef du_debug
-            s_UartPrint("[%d] submit_common_msg @@@@@@@@@@@@@@@@@@@@\r\n", __LINE__);
-            #endif
+            PRINTF("submit_common_msg @@@@@@@@@@@@@@@@@@@@\r\n");
             //==========================
             break;
         }
@@ -1418,22 +1416,22 @@ static int hc_reset (ohci_t *ohci)
     int timeout = 30;
     int smm_timeout = 50; /* 0,5 sec */
     APP_WARN("OHCI_CTRL_IR %p\r\n", &(ohci->regs->control) );
-    // if (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
-    // {
-    //     /* SMM owns the HC */
-    //     APP_WARN("OHCI_OCR\r\n");
-    //     writel (OHCI_OCR, &ohci->regs->cmdstatus); /* request ownership */
-    //     APP_WARN("USB HC TakeOver from SMM\r\n");
-    //     while (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
-    //     {
-    //         wait_ms (10);
-    //         if (--smm_timeout == 0) 
-    //         {
-    //             APP_ERROR("USB HC TakeOver failed!\r\n");
-    //             return -1;
-    //         }
-    //     }
-    // }
+    if (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
+    {
+        /* SMM owns the HC */
+        APP_WARN("OHCI_OCR\r\n");
+        writel (OHCI_OCR, &ohci->regs->cmdstatus); /* request ownership */
+        APP_WARN("USB HC TakeOver from SMM\r\n");
+        while (readl (&ohci->regs->control) & OHCI_CTRL_IR) 
+        {
+            wait_ms (10);
+            if (--smm_timeout == 0) 
+            {
+                APP_ERROR("USB HC TakeOver failed!\r\n");
+                return -1;
+            }
+        }
+    }
     APP_WARN("OHCI_INTR_MIE\r\n");
     /* Disable HC interrupts */
     writel (OHCI_INTR_MIE, &ohci->regs->intrdisable);
@@ -1542,16 +1540,16 @@ static int hc_interrupt (void)
         //ohci_dump (ohci, 1);
         //dbg("hc_interrupt: returning..");
         //=============du add 070302
-        APP_DEBUG("[ISR] hc_interrupt: returning... \r\n");
+        APP_DELAY("[ISR] hc_interrupt: returning... \r\n");
         //==========================
-        ints = readl (&ohci->regs->intrstatus);
-        err("read intrstatus=%x  %x",ints,rHcInterruptStatus);
-        ints = readl (&ohci->regs->intrenable);
-        err("read intrenable=%x %x",ints,rHcInterruptEnable);
-        ints = readl (&ohci->regs->control);
-        err("read contorl=%x %x",ints,rHcControl);
-        ints = readl (&ohci->regs->cmdstatus);
-        err("read cmdstatus=%x %x",ints,rHcCommonStatus);
+        // ints = readl (&ohci->regs->intrstatus);
+        // err("read intrstatus=%x  %x",ints,rHcInterruptStatus);
+        // ints = readl (&ohci->regs->intrenable);
+        // err("read intrenable=%x %x",ints,rHcInterruptEnable);
+        // ints = readl (&ohci->regs->control);
+        // err("read contorl=%x %x",ints,rHcControl);
+        // ints = readl (&ohci->regs->cmdstatus);
+        // err("read cmdstatus=%x %x",ints,rHcCommonStatus);
         return 0xff;
     }
     /* dbg("Interrupt: %x frame: %x", ints, le16_to_cpu (ohci->hcca->frame_no)); */
@@ -1607,83 +1605,83 @@ static int hc_interrupt (void)
 
 
 
-void hc_interrupt_irq (void)
-{
-    ohci_t *ohci = &gohci;
-    struct ohci_regs *regs = ohci->regs;
-    int ints;
-    int stat = -1;
-    s_UartPrint("i");
-    if ((ohci->hcca->done_head != 0) &&
-         !(m32_swap (ohci->hcca->done_head) & 0x01)) {
-        ints =  OHCI_INTR_WDH;
-    } 
-    else if ((ints = readl (&regs->intrstatus)) == ~(U32)0) {
-        ohci->disabled++;
-        //err ("%s device removed!", ohci->slot_name);
-        //return -1;
-    } else if ((ints &= readl (&regs->intrenable)) == 0) {
-               //ohci_dump (ohci, 1);
-        //dbg("hc_interrupt: returning..\r\n");
-        //ints = readl (&ohci->regs->intrstatus);
-        //s_UartPrint("read intrstatus=%x  %x\r\n",ints,rHcInterruptStatus);
-        //ints = readl (&ohci->regs->intrenable);
-        //s_UartPrint("read intrenable=%x %x\r\n",ints,rHcInterruptEnable);
-        //ints = readl (&ohci->regs->control);
-        //s_UartPrint("read contorl=%x %x\r\n",ints,rHcControl);
-        //ints = readl (&ohci->regs->cmdstatus);
-        //s_UartPrint("read cmdstatus=%x %x\r\n",ints,rHcCommonStatus);
-               s_UartPrint("r");
-        //return 0xff;
-    }
-    //dbg("Interrupt: %x frame: %x", ints, le16_to_cpu (ohci->hcca->frame_no)); 
-    if (ints & OHCI_INTR_RHSC) {
-        got_rhsc = 1;
-        stat = 0xff;
-    }
-    if (ints & OHCI_INTR_UE) {
-        ohci->disabled++;
-        err ("OHCI Unrecoverable Error, controller usb-%s disabled",
-            ohci->slot_name);
-        // e.g. due to PCI Master/Target Abort //
-#ifdef  DEBUG
-        //ohci_dump (ohci, 1);
-#else
-        wait_ms(1);
-#endif
-        //FIXME: be optimistic, hope that bug won't repeat often. ///
-        // Make some non-interrupt context restart the controller. ///
-        // Count and limit the retries though; either hardware or ///
-        // software errors can go forever...///
-        hc_reset (ohci);
-        //return -1;
-    }
-    if (ints & OHCI_INTR_WDH) {
-        wait_ms(1);
-        writel (OHCI_INTR_WDH, &regs->intrdisable);
-        stat = dl_done_list (&gohci, dl_reverse_done_list (&gohci));
-        writel (OHCI_INTR_WDH, &regs->intrenable);
-    }
-    if (ints & OHCI_INTR_SO) {
-        dbg("USB Schedule overrun\r\n");
-        writel (OHCI_INTR_SO, &regs->intrenable);
-        stat = -1;
-    }
-    // FIXME:  this assumes SOF (1/ms) interrupts don't get lost... //
-    if (ints & OHCI_INTR_SF) {
-        unsigned int frame = m16_swap (ohci->hcca->frame_no) & 1;
-        wait_ms(1);
-        writel (OHCI_INTR_SF, &regs->intrdisable);
-        if (ohci->ed_rm_list[frame] != NULL)
-            writel (OHCI_INTR_SF, &regs->intrenable);
-        stat = 0xff;
-    }
-    writel (ints, &regs->intrstatus);
-    //return stat;
-    hc_stat=stat;
-    return;
-}
-
+//void hc_interrupt_irq (void)
+//{
+//    ohci_t *ohci = &gohci;
+//    struct ohci_regs *regs = ohci->regs;
+//    int ints;
+//    int stat = -1;
+//    s_UartPrint("i");
+//    if ((ohci->hcca->done_head != 0) &&
+//         !(m32_swap (ohci->hcca->done_head) & 0x01)) {
+//        ints =  OHCI_INTR_WDH;
+//    } 
+//    else if ((ints = readl (&regs->intrstatus)) == ~(U32)0) {
+//        ohci->disabled++;
+//        //err ("%s device removed!", ohci->slot_name);
+//        //return -1;
+//    } else if ((ints &= readl (&regs->intrenable)) == 0) {
+//               //ohci_dump (ohci, 1);
+//        //dbg("hc_interrupt: returning..\r\n");
+//        //ints = readl (&ohci->regs->intrstatus);
+//        //s_UartPrint("read intrstatus=%x  %x\r\n",ints,rHcInterruptStatus);
+//        //ints = readl (&ohci->regs->intrenable);
+//        //s_UartPrint("read intrenable=%x %x\r\n",ints,rHcInterruptEnable);
+//        //ints = readl (&ohci->regs->control);
+//        //s_UartPrint("read contorl=%x %x\r\n",ints,rHcControl);
+//        //ints = readl (&ohci->regs->cmdstatus);
+//        //s_UartPrint("read cmdstatus=%x %x\r\n",ints,rHcCommonStatus);
+//               s_UartPrint("r");
+//        //return 0xff;
+//    }
+//    //dbg("Interrupt: %x frame: %x", ints, le16_to_cpu (ohci->hcca->frame_no)); 
+//    if (ints & OHCI_INTR_RHSC) {
+//        got_rhsc = 1;
+//        stat = 0xff;
+//    }
+//    if (ints & OHCI_INTR_UE) {
+//        ohci->disabled++;
+//        err ("OHCI Unrecoverable Error, controller usb-%s disabled",
+//            ohci->slot_name);
+//        // e.g. due to PCI Master/Target Abort //
+//#ifdef  DEBUG
+//        //ohci_dump (ohci, 1);
+//#else
+//        wait_ms(1);
+//#endif
+//        //FIXME: be optimistic, hope that bug won't repeat often. ///
+//        // Make some non-interrupt context restart the controller. ///
+//        // Count and limit the retries though; either hardware or ///
+//        // software errors can go forever...///
+//        hc_reset (ohci);
+//        //return -1;
+//    }
+//    if (ints & OHCI_INTR_WDH) {
+//        wait_ms(1);
+//        writel (OHCI_INTR_WDH, &regs->intrdisable);
+//        stat = dl_done_list (&gohci, dl_reverse_done_list (&gohci));
+//        writel (OHCI_INTR_WDH, &regs->intrenable);
+//    }
+//    if (ints & OHCI_INTR_SO) {
+//        dbg("USB Schedule overrun\r\n");
+//        writel (OHCI_INTR_SO, &regs->intrenable);
+//        stat = -1;
+//    }
+//    // FIXME:  this assumes SOF (1/ms) interrupts don't get lost... //
+//    if (ints & OHCI_INTR_SF) {
+//        unsigned int frame = m16_swap (ohci->hcca->frame_no) & 1;
+//        wait_ms(1);
+//        writel (OHCI_INTR_SF, &regs->intrdisable);
+//        if (ohci->ed_rm_list[frame] != NULL)
+//            writel (OHCI_INTR_SF, &regs->intrenable);
+//        stat = 0xff;
+//    }
+//    writel (ints, &regs->intrstatus);
+//    //return stat;
+//    hc_stat=stat;
+//    return;
+//}
+//
 
 
 /*-------------------------------------------------------------------------*/
@@ -1704,50 +1702,20 @@ static void hc_release_ohci (ohci_t *ohci)
 static char ohci_inited = 0;
 int usb_lowlevel_init(void)
 {
-    unsigned long upllvalue;
+    // unsigned long upllvalue;
     S3C24X0_CLOCK_POWER * const clk_power = S3C24X0_GetBase_CLOCK_POWER();
     S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
-
-
- 
     /*
      * Set the 48 MHz UPLL clocking. Values are taken from
      * "PLL value selection guide", 6-23, s3c2410_UM.pdf.
      */
-    //s_UartPrint("\r\n &(clk_power->CLKSLOW)=%0x\r\n",&(clk_power->CLKSLOW));
-    //s_UartPrint("\r\n CLKSLOW=%0x\r\n",clk_power->CLKSLOW);
     
-    clk_power->CLKSLOW |= UCLK_ON ; 
-    APP_DEBUG(" addr: UPLLCON=%0x\r\n", &(clk_power->UPLLCON));
-    APP_DEBUG(" val: UPLLCON=%0x\r\n", clk_power->UPLLCON);
-    APP_DEBUG(" addr: MPLLCON=%0x\r\n", &(clk_power->MPLLCON));
-    APP_DEBUG(" val: MPLLCON=%0x\r\n", clk_power->MPLLCON);
-
-    //clk_power->UPLLCON = 0x78023;    //((0x78 << 12) + (2 << 4) + 3);
-    //upllvalue = 0x78023;//(0x78<<12)|(0x02<<4)|(0x03); 
-    //clk_power->UPLLCON=0x38021;
-    //upllvalue = 0x38021;
-    upllvalue = 0x28041;
-    while (upllvalue != clk_power->UPLLCON) 
-    {
-        APP_DEBUG(" set UPLLCON(%0x)=%0x\r\n", clk_power->UPLLCON, upllvalue);
-        //s_getkey();
-
-        clk_power->UPLLCON = upllvalue;//0x78023;//((0x78 << 12) + (2 << 4) + 3);     
-        wait_ms(1);
-    }
+    APP_WARN("UPLLCON(%p)=%0x\r\n", &(clk_power->UPLLCON), clk_power->UPLLCON);
     
-    //gpio->MISCCR |= MISCCR_USBPAD; // 1 = use pads related USB for USB host //
-    gpio->MISCCR &= ~MISCCR_USBPAD;//DP0DN0=HOST DP1DN1=DEVICE
-    gpio->MISCCR &= ~(MISCCR_USB0_SUSPEND|MISCCR_USB1_SUSPEND); // 1 = use pads related USB for USB host 
-    //上面使能USB0 USB1,USB0是 USB host，USB1是USB Device
+    //gpio->MISCCR |= MISCCR_USBPAD; // 1 = use pads related USB for USB host
 
-    clk_power->CLKSLOW &= ~(UCLK_ON | MPLL_OFF | SLOW_BIT); 
-
-    //clk_power->CLKSLOW &= ~UCLK_ON; 
-    // Enable USB host clock.
-    //clk_power->CLKCON |= CLKCON_USBH;//change by wqh 有问题，下面不能进行
-    APP_DEBUG("CLKCON=%0x\r\n", clk_power->CLKCON);
+    APP_WARN("MISCCR(%p)=%0x\r\n", &(gpio->MISCCR), gpio->MISCCR);
+    APP_WARN("CLKCON(%p)=%0x\r\n", &(clk_power->CLKCON), clk_power->CLKCON);
     memset (&gohci, 0, sizeof (ohci_t));
     memset (&urb_priv, 0, sizeof (urb_priv_t));
 
@@ -1835,97 +1803,95 @@ int usb_lowlevel_init_22(void)
     unsigned long upllvalue;
     S3C24X0_CLOCK_POWER * const clk_power = S3C24X0_GetBase_CLOCK_POWER();
     S3C24X0_GPIO * const gpio = S3C24X0_GetBase_GPIO();
-
-    hc_reset (&gohci);
  
-//    /*
-//     * Set the 48 MHz UPLL clocking. Values are taken from
-//     * "PLL value selection guide", 6-23, s3c2410_UM.pdf.
-//     */
-//    //s_UartPrint("\r\n &(clk_power->CLKSLOW)=%0x\r\n",&(clk_power->CLKSLOW));
-//    //s_UartPrint("\r\n CLKSLOW=%0x\r\n",clk_power->CLKSLOW);
-//    
-//    clk_power->CLKSLOW |= UCLK_ON ; 
-//    APP_WARN(" addr: UPLLCON=%0x\r\n", &(clk_power->UPLLCON));
-//    APP_WARN(" val: UPLLCON=%0x\r\n", clk_power->UPLLCON);
-//    APP_WARN(" addr: MPLLCON=%0x\r\n", &(clk_power->MPLLCON));
-//    APP_WARN(" val: MPLLCON=%0x\r\n", clk_power->MPLLCON);
-//
-//    //clk_power->UPLLCON = 0x78023;    //((0x78 << 12) + (2 << 4) + 3);
-//    //upllvalue = 0x78023;//(0x78<<12)|(0x02<<4)|(0x03); 
-//    //clk_power->UPLLCON=0x38021;
-//    //upllvalue = 0x38021;
-//    upllvalue = 0x28041;
-//    while (upllvalue != clk_power->UPLLCON) 
-//    {
-//        APP_WARN(" set UPLLCON(%0x)=%0x\r\n", clk_power->UPLLCON, upllvalue);
-//        //s_getkey();
-//
-//        clk_power->UPLLCON = upllvalue;//0x78023;//((0x78 << 12) + (2 << 4) + 3);     
-//        wait_ms(1);
-//    }
-//    
-//    //gpio->MISCCR |= MISCCR_USBPAD; // 1 = use pads related USB for USB host //
-//    gpio->MISCCR &= ~MISCCR_USBPAD;//DP0DN0=HOST DP1DN1=DEVICE
-//    gpio->MISCCR &= ~(MISCCR_USB0_SUSPEND|MISCCR_USB1_SUSPEND); // 1 = use pads related USB for USB host 
-//    //上面使能USB0 USB1,USB0是 USB host，USB1是USB Device
-//
-//    clk_power->CLKSLOW &= ~(UCLK_ON | MPLL_OFF | SLOW_BIT); 
+   /*
+    * Set the 48 MHz UPLL clocking. Values are taken from
+    * "PLL value selection guide", 6-23, s3c2410_UM.pdf.
+    */
+   //s_UartPrint("\r\n &(clk_power->CLKSLOW)=%0x\r\n",&(clk_power->CLKSLOW));
+   //s_UartPrint("\r\n CLKSLOW=%0x\r\n",clk_power->CLKSLOW);
+   
+   clk_power->CLKSLOW |= UCLK_ON ; 
+   APP_WARN(" addr: UPLLCON=%0x\r\n", &(clk_power->UPLLCON));
+   APP_WARN(" val: UPLLCON=%0x\r\n", clk_power->UPLLCON);
+   APP_WARN(" addr: MPLLCON=%0x\r\n", &(clk_power->MPLLCON));
+   APP_WARN(" val: MPLLCON=%0x\r\n", clk_power->MPLLCON);
+
+   //clk_power->UPLLCON = 0x78023;    //((0x78 << 12) + (2 << 4) + 3);
+   //upllvalue = 0x78023;//(0x78<<12)|(0x02<<4)|(0x03); 
+   //clk_power->UPLLCON=0x38021;
+   //upllvalue = 0x38021;
+   upllvalue = 0x28041;
+   while (upllvalue != clk_power->UPLLCON) 
+   {
+       APP_WARN(" set UPLLCON(%0x)=%0x\r\n", clk_power->UPLLCON, upllvalue);
+       //s_getkey();
+
+       clk_power->UPLLCON = upllvalue;//0x78023;//((0x78 << 12) + (2 << 4) + 3);     
+       wait_ms(1);
+   }
+   
+   //gpio->MISCCR |= MISCCR_USBPAD; // 1 = use pads related USB for USB host //
+   gpio->MISCCR &= ~MISCCR_USBPAD;//DP0DN0=HOST DP1DN1=DEVICE
+   gpio->MISCCR &= ~(MISCCR_USB0_SUSPEND|MISCCR_USB1_SUSPEND); // 1 = use pads related USB for USB host 
+   //上面使能USB0 USB1,USB0是 USB host，USB1是USB Device
+
+   clk_power->CLKSLOW &= ~(UCLK_ON | MPLL_OFF | SLOW_BIT); 
 
     //clk_power->CLKSLOW &= ~UCLK_ON; 
     // Enable USB host clock.
     //clk_power->CLKCON |= CLKCON_USBH;//change by wqh 有问题，下面不能进行
-//    APP_WARN("CLKCON=%0x\r\n", clk_power->CLKCON);
-//    memset (&gohci, 0, sizeof (ohci_t));
-//    memset (&urb_priv, 0, sizeof (urb_priv_t));
-//
-//    /* align the storage */
-//    //不懂,为啥跟地址有关
-//
-//    if ((U32)&ghcca[0] & 0xff) 
-//    {
-//        APP_ERROR("HCCA not aligned!!\r\n");
-//        return -1;
-//    }
-//
-//    phcca = &ghcca[0];
-//    APP_WARN("aligned ghcca %p\r\n", phcca);
-//    //err("\r\n aligned ghcca %p \r\n", phcca);//aligned ghcca 301503e4
-//    memset(&ohci_dev, 0, sizeof(struct ohci_device));
-//
-//    if ((U32)&ohci_dev.ed[0] & 0x7) 
-//    {
-//        APP_ERROR("EDs not aligned!! \r\n");
-//        return -1;
-//    }
-//
-//    memset(gtd, 0, sizeof(td_t) * (NUM_TD + 1));
-//
-//    if ((U32)gtd & 0x7) 
-//    {
-//        APP_ERROR("TDs not aligned!! \r\n");
-//        return -1;
-//    }
-//
-//    ptd = gtd;
-//    gohci.hcca = phcca;
-//    memset (phcca, 0, sizeof (struct ohci_hcca));
-//    gohci.disabled = 1;
-//    gohci.sleeping = 0;
-//    gohci.irq = -1;
-//    gohci.regs = (struct ohci_regs *)S3C24X0_USB_HOST_BASE;
-//    gohci.flags = 0;
-//    gohci.slot_name = "s3c2410";
-//    APP_WARN("hc_reset\r\n");
-//    if (hc_reset (&gohci) < 0) 
-//    {
-//        hc_release_ohci (&gohci);
-//        /* Initialization failed */
-//        APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
-//        //clk_power->CLKCON &= ~CLKCON_USBH;
-//        APP_WARN("disable CLKCON_USBH success\r\n");
-//        return -1;
-//    }
+   APP_WARN("CLKCON=%0x\r\n", clk_power->CLKCON);
+   memset (&gohci, 0, sizeof (ohci_t));
+   memset (&urb_priv, 0, sizeof (urb_priv_t));
+
+   /* align the storage */
+   //不懂,为啥跟地址有关
+
+   if ((U32)&ghcca[0] & 0xff) 
+   {
+       APP_ERROR("HCCA not aligned!!\r\n");
+       return -1;
+   }
+
+   phcca = &ghcca[0];
+   APP_WARN("aligned ghcca %p\r\n", phcca);
+   //err("\r\n aligned ghcca %p \r\n", phcca);//aligned ghcca 301503e4
+   memset(&ohci_dev, 0, sizeof(struct ohci_device));
+
+   if ((U32)&ohci_dev.ed[0] & 0x7) 
+   {
+       APP_ERROR("EDs not aligned!! \r\n");
+       return -1;
+   }
+
+   memset(gtd, 0, sizeof(td_t) * (NUM_TD + 1));
+
+   if ((U32)gtd & 0x7) 
+   {
+       APP_ERROR("TDs not aligned!! \r\n");
+       return -1;
+   }
+
+   ptd = gtd;
+   gohci.hcca = phcca;
+   memset (phcca, 0, sizeof (struct ohci_hcca));
+   gohci.disabled = 1;
+   gohci.sleeping = 0;
+   gohci.irq = -1;
+   gohci.regs = (struct ohci_regs *)S3C24X0_USB_HOST_BASE;
+   gohci.flags = 0;
+   gohci.slot_name = "s3c2410";
+   APP_WARN("hc_reset\r\n");
+   if (hc_reset (&gohci) < 0) 
+   {
+       hc_release_ohci (&gohci);
+       /* Initialization failed */
+       APP_WARN("disable CLKCON_USBH %p\r\n", &(clk_power->CLKCON) );
+       //clk_power->CLKCON &= ~CLKCON_USBH;
+       APP_WARN("disable CLKCON_USBH success\r\n");
+       return -1;
+   }
     /* FIXME this is a second HC reset; why?? */
     writel (gohci.hc_control = OHCI_USB_RESET, &gohci.regs->control);
     wait_ms (10);

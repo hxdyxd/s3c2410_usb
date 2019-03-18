@@ -123,22 +123,19 @@ int s_usbhost_start(void)
 int s_usbhost_dev(int dev)
 {
     block_dev_desc_t *stor_dev;
-    s_UartPrint("USB device %d: \r\n", dev);
-    if (dev >= USB_MAX_STOR_DEV) 
-    {
+
+    if (dev >= USB_MAX_STOR_DEV) {
         APP_WARN("unknown device\r\n");
         return 1;
     }
     stor_dev = usb_stor_get_dev(dev);
      
-    if (stor_dev->type == DEV_TYPE_UNKNOWN) 
-    {
+    if (stor_dev->type == DEV_TYPE_UNKNOWN) {
         APP_WARN("unknown device type\r\n");
         return 1;
     }
     usb_stor_curr_dev = dev;
-    s_UartPrint("set %d is now current device\r\n", usb_stor_curr_dev);
-    return 0;   
+    return 0;
 }
 
 
@@ -157,8 +154,7 @@ int s_usbhost_read(int dev, unsigned long rblk,unsigned long rcnt,unsigned char*
     dev, blk, cnt, addr);
     have_read = usb_stor_read(dev, blk, cnt, (ulong *)addr);
      
-    if (have_read != cnt)
-    {
+    if (have_read != cnt) {
         APP_ERROR("%ld blocks read: ERROR\r\n", have_read);
         return -1;
     }

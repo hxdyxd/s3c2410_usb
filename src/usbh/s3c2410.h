@@ -307,8 +307,8 @@ extern "C"
         #endif
     } 
     /*__attribute__((__packed__))*/ S3C24X0_USB_DEV_DMAS;
-//    __packed
-		typedef struct 
+
+	typedef /*__packed */ struct
     {
         #ifdef __BIG_ENDIAN
         S3C24X0_REG8	res1[3];
@@ -432,7 +432,7 @@ extern "C"
 	//S3C24X0_I2S;
     /* I/O PORT (see manual chapter 9) */
     __packed
-	typedef struct 
+	typedef struct
     {
         S3C24X0_REG32	GPACON;
         S3C24X0_REG32	GPADAT;

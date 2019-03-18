@@ -1073,26 +1073,26 @@ int usb_storage_probe(struct usb_device *dev, unsigned int ifnum,struct us_data 
         ss->protocol = iface->bInterfaceProtocol;
     }
     /* set the handler pointers based on the protocol */
-    USB_STOR_PRINTF("Transport: ");
+    APP_DEBUG("Transport: ");
     switch (ss->protocol) 
     {
     case US_PR_CB:
-        USB_STOR_PRINTF("Control/Bulk\r\n");
+        PRINTF("Control/Bulk\r\n");
         ss->transport = usb_stor_CB_transport;
         ss->transport_reset = usb_stor_CB_reset;
         break;
     case US_PR_CBI:
-        USB_STOR_PRINTF("Control/Bulk/Interrupt\r\n");
+        PRINTF("Control/Bulk/Interrupt\r\n");
         ss->transport = usb_stor_CB_transport;
         ss->transport_reset = usb_stor_CB_reset;
         break;
     case US_PR_BULK:
-        USB_STOR_PRINTF("Bulk/Bulk/Bulk\r\n");
+        PRINTF("Bulk/Bulk/Bulk\r\n");
         ss->transport = usb_stor_BBB_transport;
         ss->transport_reset = usb_stor_BBB_reset;
         break;
     default:
-        USB_STOR_PRINTF("USB Storage Transport unknown / not yet implemented\r\n");
+        PRINTF("USB Storage Transport unknown / not yet implemented\r\n");
         return 0;
         break;
     }

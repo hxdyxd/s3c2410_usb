@@ -64,6 +64,12 @@ int Main(void)
     
     SetClockDivider(1, 1);
     SetSysFclk(DFT_FCLK_VAL);
+    ChangeUPllValue(0x78, 2, 3);  //UCLK=48Mhz
+    //ChangeUPllValue(0x28, 4, 1);  //UCLK=48Mhz?????
+
+    //Use pads related USB for USB host
+    rMISCCR |= 0x118;
+
     Delay( 0 ) ;
     
     Port_Init();
@@ -73,14 +79,15 @@ int Main(void)
     Uart_Init(0, UART_BAUD);
 
     EnableModuleClock(CLOCK_UART0|CLOCK_TIMER|CLOCK_GPIO|CLOCK_NAND|CLOCK_LCD);
+    //Disable PCLK into USB device block.
+    DisableModuleClock(CLOCK_USBD);
 
 
-    putch('\r\n');
-    puts("***********************************\r\n");
-    puts("*    FS2410 board demo program    *\r\n");
-    puts("*    Version: 2.1   2005/10/12    *\r\n"); 
-    puts("***********************************\r\n");
-    ChangeUPllValue(40, 4, 1);  //UCLK=48Mhz
+    PRINTF("\r\n");
+    APP_DEBUG("***********************************\r\n");
+    APP_DEBUG("*    FS2410 board demo program    *\r\n");
+    APP_DEBUG("*    Version: 2.1   2005/10/12    *\r\n");
+    APP_DEBUG("***********************************\r\n");
 
     APP_DEBUG("Usb Host Example!\r\n");
     
@@ -90,6 +97,7 @@ int Main(void)
         if(0) {
             s_getkey();
         } else {
+            //Automatic Test ...
             delay: {
                 int i = 10000000;
                 while(--i);
